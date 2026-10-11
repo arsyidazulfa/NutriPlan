@@ -3247,3 +3247,155 @@ textarea {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+
+/* =============================================
+   SIDEBAR RESPONSIVE - MOBILE POPUP / DRAWER
+   ============================================= */
+.sidebar {
+    width: 260px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+/* Tombol menu mobile disembunyikan di desktop */
+.sidebar-mobile-toggle,
+.sidebar-overlay {
+    display: none;
+}
+
+@media (max-width: 768px) {
+
+    /* Tombol ☰ */
+    .sidebar-mobile-toggle {
+        position: fixed;
+        left: 14px;
+        top: 72px;
+        z-index: 1301;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        border: none;
+        border-radius: 10px;
+        background: var(--green-primary);
+        color: #fff;
+        font-size: 22px;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    }
+
+    /* Latar gelap ketika sidebar terbuka */
+    .sidebar-overlay {
+        position: fixed;
+        inset: 60px 0 0 0;
+        z-index: 1298;
+        display: block;
+        background: rgba(0, 0, 0, 0.38);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity .25s ease, visibility .25s ease;
+    }
+
+    .sidebar-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Sidebar menjadi drawer / popup dari kiri */
+    .sidebar {
+        position: fixed;
+        top: 60px;
+        left: 0;
+        z-index: 1299;
+        width: min(82vw, 290px);
+        height: calc(100vh - 60px);
+        min-height: 0;
+        padding: 22px 16px 18px;
+        overflow-y: auto;
+        background: #fff;
+        box-shadow: 8px 0 24px rgba(0, 0, 0, 0.16);
+        transform: translateX(-105%);
+        transition: transform .25s ease;
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+    .sidebar-profile-photo {
+        width: 72px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    .sidebar-profile-name {
+        font-size: 14px;
+        text-align: center;
+        word-break: break-word;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .sidebar-nav-item {
+        font-size: 13px;
+        padding: 11px 10px;
+        gap: 9px;
+    }
+
+    .nav-icon {
+        font-size: 17px;
+    }
+
+    .sidebar-logout {
+        font-size: 13px;
+        padding: 10px;
+    }
+
+    /* Saat drawer terbuka, tombol menu ikut bergeser */
+    .sidebar-mobile-toggle.active {
+        left: min(calc(82vw - 54px), 236px);
+        background: #fff;
+        color: var(--green-primary);
+        border: 1px solid #dbe3ec;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        width: 84vw;
+        padding: 18px 14px 16px;
+    }
+
+    .sidebar-profile-photo {
+        width: 64px;
+        height: 64px;
+    }
+
+    .sidebar-profile-name {
+        font-size: 13px;
+    }
+
+    .sidebar-nav-item {
+        font-size: 12px;
+        padding: 10px 9px;
+    }
+
+    .sidebar-logout {
+        font-size: 12px;
+    }
+
+    .sidebar-mobile-toggle.active {
+        left: calc(84vw - 54px);
+    }
+}
