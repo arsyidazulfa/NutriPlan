@@ -19,7 +19,8 @@ foreach (['2026-10-06', '2026-02-30', 'next monday', ''] as $tanggal) {
 check(!menuAmanUntukAnak(['alergi_kandungan' => 'Susu, Telur'], ['alergi' => 'telur']), 'Token alergi dinormalisasi');
 check(!menuAmanUntukAnak(['alergi_kandungan' => 'udang'], ['alergi_lainnya' => 'Udang']), 'Alergi lainnya ikut disaring');
 check(menuAmanUntukAnak(['alergi_kandungan' => null], ['alergi' => 'telur']), 'Kandungan alergi kosong diproses');
-$anak = ['usia' => 8, 'jenis_kelamin' => 'Laki-laki'];
+$anak = ['usia' => 8, 'jenis_kelamin' => 'Laki-laki', 'berat_badan_ideal' => 24.41, 'kebutuhan_energi' => 1492, 'kebutuhan_protein' => 36.2];
+$nasi = ['energi' => 180, 'protein' => 3.0, 'lemak' => 0.3, 'karbohidrat' => 39.8, 'serat' => 0.2];
 $menu = ['id_menu' => 1, 'nama_menu' => 'Menu utama', 'energi' => 400, 'protein' => 10,
     'kelompok_usia' => '6-9', 'kategori_protein' => 'hewani', 'waktu_makan' => 'pagi,malam'];
 check(menuLolosHardRule($menu, $anak, 'hewani', 'pagi'), 'Kandidat lolos seluruh hard rule');
@@ -33,20 +34,21 @@ foreach ([
 }
 check(!menuLolosHardRule($menu + ['alergi_kandungan' => 'telur'], $anak + ['alergi' => 'Telur'], 'hewani', 'pagi'), 'R4 alergi ditolak');
 check(menuLolosHardRule(array_replace($menu, ['kelompok_usia' => 'semua']), $anak, 'hewani', 'pagi'), 'Kelompok semua berlaku untuk usia anak');
-foreach (['pagi' => 412.5, 'siang' => 495.0, 'malam' => 412.5] as $slot => $energi) {
-    check(abs(targetMenuPlanning($anak, $slot)['target_energi'] - $energi) < 0.00001, "Target energi final $slot");
+foreach (['pagi' => 373.0, 'siang' => 447.6, 'malam' => 373.0] as $slot => $energi) {
+    check(abs(targetMenuPlanning($anak, $slot)['target_energi'] - $energi) < 0.00001, "Target energi $slot dari kebutuhan anak");
 }
-$hasil = kandidatMenuPlanning([$menu, array_replace($menu, ['id_menu' => 2, 'energi' => 412.5])], $anak, 'hewani', 'pagi');
-check(array_column($hasil, 'id_menu') === [1,2], 'Tidak mengurutkan kandidat berdasarkan formula ranking baru');
-check($hasil[0]['target_energi'] === 412.5 && $hasil[0]['selisih_energi'] === 12.5, 'Target dan selisih energi terpisah');
-check($hasil[0]['target_protein'] === null && $hasil[0]['selisih_protein'] === null, 'Tidak mengarang target atau selisih protein per slot');
-check($hasil[0]['status_ranking'] === 'PERLU KEPUTUSAN' && !isset($hasil[0]['skor_rekomendasi']), 'Ranking belum ditetapkan dan tanpa skor gabungan');
+// Pagi: target 373 kkal / 9,05 g. Menu 2 (150 kkal + nasi 100 g) lebih dekat daripada menu 1 (400 kkal + nasi 50 g).
+$hasil = kandidatMenuPlanning([$menu, array_replace($menu, ['id_menu' => 2, 'energi' => 150, 'protein' => 7])], $anak, 'hewani', 'pagi', $nasi);
+check(array_column($hasil, 'id_menu') === [2, 1], 'Kandidat diurutkan dari skor terkecil');
+check($hasil[0]['nasi_gram'] === 100 && $hasil[1]['nasi_gram'] === 50, 'Takaran nasi mengikuti energi lauk');
+check(abs($hasil[0]['skor'] - 0.2203) < 0.00001 && abs($hasil[1]['skor'] - 0.5844) < 0.00001, 'Skor = selisih energi dan protein relatif terhadap target');
 rejects(fn() => targetMenuPlanning($anak, 'camilan'), 'Camilan bukan slot utama');
-rejects(fn() => targetMenuPlanning(['usia' => 5, 'jenis_kelamin' => 'Laki-laki'], 'pagi'), 'Usia di luar cakupan AKG ditolak');
+rejects(fn() => targetMenuPlanning(['usia' => 8, 'jenis_kelamin' => 'Laki-laki'], 'pagi'), 'Target ditolak bila kebutuhan anak belum dihitung');
+check(!menuLolosHardRule($menu, ['usia' => 5] + $anak, 'hewani', 'pagi'), 'Usia di luar 6-12 tahun tidak mendapat kandidat');
 
 // Opsional: jalankan pada server uji tersendiri. Tidak mengakses db_nutriplan.
 if (!in_array('--database', $argv, true)) exit(0);
-$conn = new mysqli('127.0.0.1', 'root', '', '', 13317);
+$conn = new mysqli('127.0.0.1', 'root', '', '', (int) (getenv('NUTRIPLAN_TEST_PORT') ?: 13317));
 $conn->query('CREATE DATABASE IF NOT EXISTS nutriplan_regression');
 $conn->select_db('nutriplan_regression');
 // Tabel sementara menggunakan kolom yang dipanggil kode; bukan migrasi database aplikasi.
@@ -92,5 +94,10 @@ $conn->query("INSERT INTO menu VALUES
     (5, 'Camilan', 'hewani', 'semua', 'cemilan', NULL, 462, 11.2),
     (6, 'Usia lain', 'hewani', '10-12', 'pagi', NULL, 462, 11.2),
     (7, 'Pilihan kedua', 'hewani', '6-9', 'pagi', NULL, 400, 10)");
+$conn->query("CREATE TEMPORARY TABLE bahan (
+    kode_tkpi VARCHAR(10), energi FLOAT, protein FLOAT, lemak FLOAT, karbohidrat FLOAT, serat FLOAT
+) ENGINE=InnoDB");
+$conn->query("INSERT INTO bahan VALUES ('AP001', 180, 3.0, 0.3, 39.8, 0.2)");
 $anak['alergi'] = 'telur';
-check(array_column(ambilMenuPlanning($conn, 'hewani', $anak, 'pagi'), 'id_menu') === [1,7], 'Kandidat disaring dengan R1–R4, ditampilkan alfabetis');
+// Menu 7 (400 kkal) lebih dekat ke target pagi 373 kkal daripada menu 1 (462 kkal).
+check(array_column(ambilMenuPlanning($conn, 'hewani', $anak, 'pagi'), 'id_menu') === [7,1], 'Kandidat disaring dengan R1–R4 lalu diurutkan menurut skor');

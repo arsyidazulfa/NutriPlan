@@ -38,6 +38,7 @@ if (!file_exists($autoload)) {
 }
 
 require_once $autoload;
+require_once ROOT . '/helpers/rekomendasi.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -50,7 +51,10 @@ $stmtPlan = mysqli_prepare(
         pm.*,
         da.nama_anak,
         da.usia,
-        da.jenis_kelamin
+        da.jenis_kelamin,
+        da.berat_badan_ideal,
+        da.kebutuhan_energi,
+        da.kebutuhan_protein
      FROM planning_mingguan pm
      INNER JOIN data_anak da
         ON da.id_anak = pm.id_anak
@@ -113,6 +117,12 @@ $hasilDetail = mysqli_stmt_get_result($stmtDetail);
 
 $jadwal = [];
 
+try {
+    $nasi = ambilBahanNasi($conn);
+} catch (RuntimeException $e) {
+    $nasi = null;
+}
+
 while ($row = mysqli_fetch_assoc($hasilDetail)) {
     $hari_ke = (int) $row['hari_ke'];
     $slot = $row['waktu_makan'];
@@ -125,6 +135,23 @@ while ($row = mysqli_fetch_assoc($hasilDetail)) {
             'siang'     => null,
             'malam'     => null
         ];
+    }
+
+    // Nilai yang dicetak = 1 porsi lauk + nasi yang ditakar untuk anak ini.
+    if ($nasi) {
+        try {
+            $porsi = susunPorsiMenu(
+                $row,
+                targetMenuPlanning($plan, $slot),
+                $nasi
+            );
+
+            $row['nasi_gram'] = $porsi['nasi_gram'];
+            $row['energi'] = $porsi['total_energi'];
+            $row['protein'] = $porsi['total_protein'];
+        } catch (InvalidArgumentException $e) {
+            // Kebutuhan anak belum dihitung: cetak nilai lauk saja.
+        }
     }
 
     $jadwal[$hari_ke][$slot] = $row;
@@ -158,6 +185,12 @@ function menuPdf(?array $menu): string
     $hasil = htmlspecialchars($menu['nama_menu']);
 
     $info = [];
+
+    if (!empty($menu['nasi_gram'])) {
+        $hasil .= '<br><span class="gizi">Lauk 1 porsi + nasi '
+            . (int) $menu['nasi_gram']
+            . ' g</span>';
+    }
 
     if ($menu['energi'] !== null && $menu['energi'] !== '') {
         $info[] = number_format(

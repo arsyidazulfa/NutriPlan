@@ -2,6 +2,8 @@
 
 /** @var mysqli $conn */
 
+require_once ROOT . '/helpers/ikon_menu.php';
+
 $kategori = $_GET['kategori'] ?? 'makan';
 
 if (!in_array($kategori, ['makan', 'camilan'], true)) {
@@ -45,7 +47,8 @@ if ($kategori === 'camilan') {
             energi,
             protein,
             kategori_protein,
-            waktu_makan
+            waktu_makan,
+            jenis_lauk
          FROM menu
          WHERE FIND_IN_SET('pagi', waktu_makan) > 0
             OR FIND_IN_SET('siang', waktu_makan) > 0
@@ -442,7 +445,7 @@ function katalogLabelProtein(?string $protein): string
                             <?php else: ?>
 
                                 <div class="katalog-image-placeholder">
-                                    🍱
+                                    <?= ikonMenuHtml($menu); ?>
                                 </div>
 
                             <?php endif; ?>

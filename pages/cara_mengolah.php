@@ -2,6 +2,9 @@
 
 /** @var mysqli $conn */
 
+require_once ROOT . '/helpers/rekomendasi.php';
+require_once ROOT . '/helpers/ikon_menu.php';
+
 $idUser = (int) ($_SESSION['id_user'] ?? 0);
 
 if ($idUser <= 0) {
@@ -189,7 +192,12 @@ function caraGambarMenu(array $menu): string
         return $gambar;
     }
 
-    return '/uploads/menu/' . ltrim($gambar, '/');
+    // Sama seperti beranda dan katalog: foto menu disimpan di assets/images.
+    $gambar = ltrim($gambar, '/');
+
+    return is_file(ROOT . '/assets/images/' . $gambar)
+        ? '/assets/images/' . $gambar
+        : '';
 }
 
 
@@ -296,6 +304,46 @@ function caraLangkahMasak(array $menu): array
 
 
 /* =========================================================
+   PORSI MENU UNTUK ANAK
+   ========================================================= */
+
+$nasi = null;
+
+if ($plan && $jadwal) {
+    try {
+        $nasi = ambilBahanNasi($conn);
+    } catch (RuntimeException $e) {
+        $nasi = null;
+    }
+}
+
+/*
+ * Takaran nasi dan total gizi (lauk + nasi) sebuah menu
+ * untuk anak pemilik planning pada waktu makan tertentu.
+ */
+function caraPorsiMenu(
+    array $menu,
+    array $anak,
+    string $slot,
+    ?array $nasi
+): ?array {
+
+    if (!$nasi) {
+        return null;
+    }
+
+    try {
+        return susunPorsiMenu(
+            $menu,
+            targetMenuPlanning($anak, $slot),
+            $nasi
+        );
+    } catch (InvalidArgumentException $e) {
+        return null;
+    }
+}
+
+/* =========================================================
    DATA ANAK
    ========================================================= */
 
@@ -377,6 +425,7 @@ $dataAnak = $plan ? [
                 <div class="cara-header">
 
                     <div>
+                        <span class="sp-step">Langkah 4</span>
                         <h1>Cara Mengolah Menu</h1>
 
                         <p>
@@ -563,6 +612,28 @@ $dataAnak = $plan ? [
                                     $langkahMasak =
                                         caraLangkahMasak($menu);
 
+                                    $porsi = caraPorsiMenu(
+                                        $menu,
+                                        $plan,
+                                        $slot,
+                                        $nasi
+                                    );
+
+                                    // Nilai gizi yang ditampilkan: lauk + nasi bila takarannya tersedia.
+                                    $giziTampil = $menu;
+
+                                    if ($porsi) {
+                                        foreach (array_keys($nutrisi) as $zat) {
+                                            $giziTampil[$zat] = $porsi['total_' . $zat];
+                                        }
+                                    }
+
+                                    $takaranLauk = caraAmbilTeks(
+                                        $menu,
+                                        ['takaran_porsi'],
+                                        ''
+                                    );
+
                                     ?>
 
 
@@ -595,7 +666,7 @@ $dataAnak = $plan ? [
                                                 <span>
                                                     <?= e(
                                                         caraNilaiMenu(
-                                                            $menu,
+                                                            $giziTampil,
                                                             'energi',
                                                             'kkal'
                                                         )
@@ -605,7 +676,7 @@ $dataAnak = $plan ? [
 
                                                     <?= e(
                                                         caraNilaiMenu(
-                                                            $menu,
+                                                            $giziTampil,
                                                             'protein',
                                                             'g'
                                                         )
@@ -649,7 +720,7 @@ $dataAnak = $plan ? [
                                                     <?php else: ?>
 
                                                         <div class="cara-image-placeholder">
-                                                            🍽
+                                                            <?= ikonMenuHtml($menu); ?>
                                                         </div>
 
                                                     <?php endif; ?>
@@ -680,6 +751,7 @@ $dataAnak = $plan ? [
                                                     <section class="cara-detail-section">
                                                         <h4>
                                                             Kandungan Gizi
+                                                            <?= $porsi ? '(lauk + nasi)' : ''; ?>
                                                         </h4>
                                                         <div class="cara-nutrition-grid">
 
@@ -695,7 +767,7 @@ $dataAnak = $plan ? [
                                                                     <strong>
                                                                         <?= e(
                                                                             caraNilaiMenu(
-                                                                                $menu,
+                                                                                $giziTampil,
                                                                                 $key,
                                                                                 $satuan
                                                                             )
@@ -709,6 +781,33 @@ $dataAnak = $plan ? [
                                                         </div>
 
                                                     </section>
+
+                                                    <!-- TAKARAN SAJI -->
+                                                    <?php if ($porsi || $takaranLauk !== ''): ?>
+                                                        <section class="cara-detail-section">
+
+                                                            <h4>
+                                                                Takaran Saji untuk Anak
+                                                            </h4>
+
+                                                            <div class="cara-text-block">
+                                                                <?php if ($takaranLauk !== ''): ?>
+                                                                    <div>
+                                                                        <strong>Lauk:</strong>
+                                                                        <?= e($takaranLauk); ?>
+                                                                    </div>
+                                                                <?php endif; ?>
+
+                                                                <?php if ($porsi): ?>
+                                                                    <div>
+                                                                        <strong>Nasi:</strong>
+                                                                        <?= (int) $porsi['nasi_gram']; ?> g
+                                                                    </div>
+                                                                <?php endif; ?>
+                                                            </div>
+
+                                                        </section>
+                                                    <?php endif; ?>
 
                                                     <!-- BAHAN -->
                                                     <section class="cara-detail-section">

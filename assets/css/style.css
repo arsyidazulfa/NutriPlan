@@ -1039,6 +1039,51 @@ textarea {
     font-weight: 700;
 }
 
+.rincian-gizi {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.rincian-gizi th,
+.rincian-gizi td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e5ebe7;
+    text-align: left;
+}
+
+.rincian-gizi th {
+    background: #f3f8f4;
+    color: #4f5d53;
+    font-weight: 700;
+}
+
+.rincian-gizi th:nth-child(n+3),
+.rincian-gizi td:nth-child(n+3),
+.rincian-gizi tfoot td:nth-child(n+2) {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.rincian-gizi tfoot td {
+    border-bottom: none;
+    font-weight: 700;
+}
+
+.rincian-gizi-catatan {
+    margin: 10px 0 0;
+    color: #6b7280;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.bahan-resep {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
 .menu-detail-nutrition {
     background: var(--green-light);
     border-radius: var(--radius-sm);
@@ -1807,6 +1852,55 @@ textarea {
     border-top: 1px dashed #e2e8f0;
     color: #64748b;
     font-size: 10px;
+}
+
+.menu-portion {
+    margin: 0 0 8px;
+    color: #15803d;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+/*
+|--------------------------------------------------------------------------
+| TOMBOL PILIHAN JENIS LAUK
+|--------------------------------------------------------------------------
+*/
+.lauk-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 13px;
+}
+
+.lauk-chip {
+    padding: 6px 13px;
+    border: 1px solid #dbe3ec;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 700;
+    transition: 0.2s ease;
+}
+
+.lauk-chip:hover {
+    border-color: #86efac;
+    background: #f8fffb;
+    color: #15803d;
+}
+
+.lauk-chip.active {
+    border-color: #86efac;
+    background: #ecfdf5;
+    color: #15803d;
+}
+
+.planning-page .menu-card[hidden] {
+    display: none;
 }
 
 .menu-select-button {
@@ -3397,5 +3491,499 @@ textarea {
 
     .sidebar-mobile-toggle.active {
         left: calc(84vw - 54px);
+    }
+}
+
+/* =============================================
+   PERBAIKAN TAMPILAN HP (Okt 2026)
+   Aturan .dashboard-content h2 di dashboard.css menimpa ukuran judul
+   kartu, jadi judul kartu di bawah ditulis ulang dengan selektor lebih kuat.
+   ============================================= */
+
+.dashboard-content .child-card-title,
+.dashboard-content .cara-child-head h2 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 18px;
+    font-weight: 750;
+}
+
+.dashboard-content .cara-day-head h2 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 17px;
+    font-weight: 750;
+}
+
+.dashboard-content .sp-form-heading h2 {
+    margin: 0 0 6px;
+    color: #1e293b;
+    font-size: 20px;
+}
+
+/* Kebutuhan harian: baris tersendiri di bawah data anak */
+.child-need {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+    padding: 11px 22px 13px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fcf9;
+}
+
+.child-need span {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.child-need strong {
+    color: #15803d;
+    font-size: 14px;
+    font-weight: 750;
+}
+
+/* Kartu menu planning */
+.menu-badge {
+    display: inline-block;
+    align-self: flex-start;
+    margin-bottom: 6px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 10px;
+    font-weight: 750;
+}
+
+#planningForm:not(.tampil-hitung) .menu-hitung {
+    display: none;
+}
+
+.hitung-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.meal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.menu-more,
+.menu-change {
+    padding: 8px 14px;
+    border: 1px solid #86efac;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #15803d;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.menu-more:hover,
+.menu-change:hover {
+    background: #f0fdf4;
+}
+
+.lauk-filter[hidden],
+.menu-more[hidden],
+.menu-change[hidden] {
+    display: none;
+}
+
+.day-next {
+    display: block;
+    width: 100%;
+    margin-top: 18px;
+    padding: 12px;
+    border: none;
+    border-radius: 11px;
+    background: var(--green-primary);
+    color: #ffffff;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* Disorot sebentar ketika hari baru saja lengkap */
+.day-next.sorot {
+    animation: sorot-lanjut 0.8s ease-in-out 3;
+}
+
+@keyframes sorot-lanjut {
+    50% {
+        box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.35);
+        transform: scale(1.02);
+    }
+}
+
+.planning-day-tab.lengkap::after {
+    content: " ✓";
+    color: #16a34a;
+}
+
+/* Pilihan minggu planning (pengganti input tanggal) */
+.sp-field select {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid #d5dce5;
+    border-radius: 11px;
+    background: #fff;
+    color: #1e293b;
+    font-family: inherit;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.sp-field select:focus {
+    border-color: var(--green-primary);
+    outline: none;
+}
+
+/* Nomor langkah di menu samping */
+.nav-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-left: auto;
+    border-radius: 50%;
+    background: #e7f2e9;
+    color: #0d4715;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* Ikon jenis lauk pengganti foto menu */
+.menu-image-placeholder,
+.cara-image-placeholder,
+.menu-card-no-img,
+.katalog-image-placeholder,
+.menu-detail-no-img {
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ikon-jenis-label {
+    display: block;
+    color: #15803d;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+}
+
+/* Tombol isi otomatis dan saklar perhitungan */
+.planning-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.isi-otomatis {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px;
+    background: var(--green-primary);
+    color: #ffffff;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.isi-otomatis:hover {
+    filter: brightness(1.1);
+}
+
+/* Waktu makan yang belum dipilih saat menekan "Lihat Cara Mengolah" */
+.meal-section.perlu-dipilih {
+    padding: 10px;
+    margin: -10px;
+    border-radius: 14px;
+    outline: 2px solid #f59e0b;
+    scroll-margin-top: 130px;
+}
+
+/* Pesan singkat di bawah layar */
+.planning-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    z-index: 2000;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    padding: 12px 18px;
+    border-radius: 12px;
+    background: #1e293b;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.45;
+    text-align: center;
+    transform: translateX(-50%);
+}
+
+.planning-toast[hidden] {
+    display: none;
+}
+
+/* Langkah penggunaan di beranda.
+   Bagian "tentang" sesudahnya naik 90px (gelombang), jadi beri ruang di bawah. */
+.section.langkah-section {
+    padding-bottom: 110px;
+}
+
+.langkah-list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.langkah-list a {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    height: 100%;
+    padding: 18px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+    color: inherit;
+    text-decoration: none;
+    transition: 0.2s ease;
+}
+
+.langkah-list a:hover {
+    border-color: #86efac;
+    background: #f8fffb;
+}
+
+.langkah-nomor {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--green-primary);
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.langkah-list strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #1e293b;
+    font-size: 15px;
+}
+
+.langkah-list small {
+    display: block;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+@media (max-width: 1250px) {
+    .child-data-item,
+    .child-data-item:first-child {
+        padding: 2px 14px 2px 0;
+    }
+}
+
+@media (max-width: 1100px) {
+    /* dashboard.css memaksa 7 kolom selebar isi; di tablet tab hari melebihi layar */
+    .planning-page .planning-day-tabs {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .planning-page .planning-day-tab {
+        padding: 8px 2px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .langkah-list {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero {
+        min-height: auto;
+    }
+
+    /* Tombol menu samping diberi tulisan agar mudah ditemukan */
+    .dashboard-wrap .sidebar-toggle {
+        width: auto;
+        gap: 6px;
+        padding: 0 12px;
+        font-size: 18px;
+    }
+
+    .sidebar-toggle-text {
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    body.sidebar-open .sidebar-toggle-text {
+        display: none;
+    }
+
+    /* Bayangan laci menu hanya saat terbuka (sebelumnya membayang di tepi kiri) */
+    .dashboard-wrap .sidebar-drawer {
+        box-shadow: none;
+    }
+
+    .dashboard-wrap .sidebar-drawer.open {
+        box-shadow: 4px 0 18px rgba(0, 0, 0, .15);
+    }
+}
+
+@media (max-width: 640px) {
+    /* Kartu data anak di planning: 2 baris ringkas */
+    .child-card {
+        margin-bottom: 14px;
+        border-radius: 14px;
+    }
+
+    .child-card-header {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 10px;
+        padding: 14px 16px 2px;
+    }
+
+    .dashboard-content .child-card-title,
+    .dashboard-content .cara-child-head h2,
+    .dashboard-content .cara-day-head h2 {
+        font-size: 16px;
+    }
+
+    .child-card-icon {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .child-budget {
+        padding: 5px 9px;
+        font-size: 10px;
+    }
+
+    .child-data-grid,
+    .cara-child-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px 8px;
+        padding: 10px 16px 12px;
+    }
+
+    .child-data-item,
+    .child-data-item:first-child,
+    .cara-child-grid > div,
+    .cara-child-grid > div:first-child {
+        padding: 0;
+    }
+
+    .child-data-item:first-child,
+    .cara-child-grid > div:first-child {
+        grid-column: span 2;
+    }
+
+    .child-data-label {
+        margin-bottom: 2px;
+        font-size: 10px;
+    }
+
+    .child-data-value,
+    .cara-child-grid strong {
+        font-size: 13px;
+    }
+
+    .cara-child-grid strong {
+        margin-top: 2px;
+    }
+
+    .child-need {
+        padding: 9px 16px 11px;
+    }
+
+    .child-need strong {
+        font-size: 13px;
+    }
+
+    /* Kartu data anak di cara mengolah */
+    .cara-child-head {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 10px;
+        padding: 14px 16px 2px;
+    }
+
+    /* Tab hari: 4 kolom pendek, bukan 2 kolom tinggi */
+    .planning-page .planning-day-tabs {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .planning-page .planning-day-tab {
+        min-height: 38px;
+        padding: 6px 4px;
+        font-size: 12px;
+    }
+
+    .planning-actions,
+    .isi-otomatis {
+        width: 100%;
+    }
+
+    /* Pilihan sumber protein: satu kolom supaya tidak terpotong */
+    .sp-options {
+        grid-template-columns: 1fr;
+    }
+
+    .sp-form-card {
+        padding: 18px;
+    }
+
+    .sp-option-card {
+        min-height: 0;
+    }
+
+    .langkah-list {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .langkah-list a {
+        padding: 14px;
     }
 }

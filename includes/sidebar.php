@@ -10,7 +10,8 @@ class="sidebar-toggle"
 id="sidebarToggle"
 aria-label="Buka menu"
 >
-☰
+<span aria-hidden="true">☰</span>
+<span class="sidebar-toggle-text">Menu</span>
 </button>
 
 <aside
@@ -64,6 +65,7 @@ class="sidebar-nav-item <?= $current === 'data_anak' ? 'active' : ''; ?>"
 >
 <span class="nav-icon">👶</span>
 <span>Data Anak</span>
+<span class="nav-step">1</span>
 </a>
 
 <a
@@ -72,14 +74,7 @@ class="sidebar-nav-item <?= $current === 'sumber_protein' ? 'active' : ''; ?>"
 >
 <span class="nav-icon">🌱</span>
 <span>Sumber Protein</span>
-</a>
-
-<a
-href="/index.php?page=camilan_sehat"
-class="sidebar-nav-item <?= $current === 'camilan_sehat' ? 'active' : ''; ?>"
->
-<span class="nav-icon">🍎</span>
-<span>Camilan Sehat</span>
+<span class="nav-step">2</span>
 </a>
 
 <a
@@ -88,6 +83,7 @@ class="sidebar-nav-item <?= $current === 'planning_mingguan' ? 'active' : ''; ?>
 >
 <span class="nav-icon">📅</span>
 <span>Planning Mingguan</span>
+<span class="nav-step">3</span>
 </a>
 
 <a
@@ -96,6 +92,15 @@ class="sidebar-nav-item <?= $current === 'cara_mengolah' ? 'active' : ''; ?>"
 >
 <span class="nav-icon">🍳</span>
 <span>Cara Mengolah</span>
+<span class="nav-step">4</span>
+</a>
+
+<a
+href="/index.php?page=camilan_sehat"
+class="sidebar-nav-item <?= $current === 'camilan_sehat' ? 'active' : ''; ?>"
+>
+<span class="nav-icon">🍎</span>
+<span>Camilan Sehat</span>
 </a>
 
 </nav>

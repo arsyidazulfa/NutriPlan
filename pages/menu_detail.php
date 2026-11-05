@@ -35,6 +35,25 @@ if (!$menu) {
 
 
 /* =============================================
+   RINCIAN BAHAN DAN PERHITUNGAN GIZI
+   ============================================= */
+
+require_once ROOT . '/helpers/gizi_menu.php';
+require_once ROOT . '/helpers/ikon_menu.php';
+
+try {
+    $komposisi = ambilKomposisiMenu($conn, $id);
+} catch (RuntimeException $e) {
+    $komposisi = [];
+}
+
+$bahanResep = array_values(array_filter(array_map(
+    'trim',
+    preg_split('/\r\n|\r|\n/', (string) ($menu['bahan_makanan'] ?? ''))
+)));
+
+
+/* =============================================
    MENU LAINNYA
    ============================================= */
 
@@ -44,6 +63,7 @@ $stmt = mysqli_prepare(
         id_menu,
         nama_menu,
         gambar,
+        jenis_lauk,
         energi,
         protein
      FROM menu
@@ -190,7 +210,7 @@ if ($caraMasak !== '') {
                 <?php else: ?>
 
                     <div class="menu-detail-no-img">
-                        🍱
+                        <?= ikonMenuHtml($menu); ?>
                     </div>
 
                 <?php endif; ?>
@@ -249,7 +269,7 @@ if ($caraMasak !== '') {
                 <div class="menu-detail-nutrition">
 
                     <h4>
-                        Kandungan Gizi
+                        Kandungan Gizi 1 Porsi Lauk
                     </h4>
 
                     <div class="nutrition-grid">
@@ -321,6 +341,107 @@ if ($caraMasak !== '') {
                     </div>
 
                 </div>
+
+
+                <!-- RINCIAN PERHITUNGAN GIZI -->
+                <?php if ($komposisi): ?>
+
+                    <div class="menu-detail-steps">
+
+                        <h4>
+                            Rincian Perhitungan Gizi
+                        </h4>
+
+                        <table class="rincian-gizi">
+
+                            <thead>
+                                <tr>
+                                    <th>Bahan (TKPI)</th>
+                                    <th>Takaran</th>
+                                    <th>Berat</th>
+                                    <th>Energi</th>
+                                    <th>Protein</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <?php foreach ($komposisi as $bahan): ?>
+
+                                    <?php $giziBahan = hitungGiziMenu([$bahan]); ?>
+
+                                    <tr>
+                                        <td>
+                                            <?= htmlspecialchars($bahan['nama_bahan']); ?>
+                                        </td>
+                                        <td>
+                                            <?= htmlspecialchars($bahan['urt'] ?? '-'); ?>
+                                        </td>
+                                        <td>
+                                            <?= number_format((float) $bahan['berat_gram'], 0, ',', '.'); ?> g
+                                        </td>
+                                        <td>
+                                            <?= number_format($giziBahan['energi'], 1, ',', '.'); ?> kkal
+                                        </td>
+                                        <td>
+                                            <?= number_format($giziBahan['protein'], 1, ',', '.'); ?> g
+                                        </td>
+                                    </tr>
+
+                                <?php endforeach; ?>
+
+                            </tbody>
+
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3">Jumlah 1 porsi lauk</td>
+                                    <td>
+                                        <?= number_format((float) ($menu['energi'] ?? 0), 1, ',', '.'); ?> kkal
+                                    </td>
+                                    <td>
+                                        <?= number_format((float) ($menu['protein'] ?? 0), 1, ',', '.'); ?> g
+                                    </td>
+                                </tr>
+                            </tfoot>
+
+                        </table>
+
+                        <p class="rincian-gizi-catatan">
+                            Berat bahan mengikuti satuan penukar pada Daftar Bahan Makanan Penukar
+                            (Permenkes No. 41 Tahun 2014). Nilai gizi dihitung dari Tabel Komposisi
+                            Pangan Indonesia 2017. Bumbu tidak dihitung, dan nasi ditakar terpisah
+                            sesuai kebutuhan anak pada halaman planning.
+                        </p>
+
+                    </div>
+
+                <?php endif; ?>
+
+
+                <!-- BAHAN RESEP -->
+                <?php if ($bahanResep): ?>
+
+                    <div class="menu-detail-steps">
+
+                        <h4>
+                            Bahan
+                        </h4>
+
+                        <ul class="bahan-resep">
+
+                            <?php foreach ($bahanResep as $item): ?>
+
+                                <li>
+                                    <?= htmlspecialchars($item); ?>
+                                </li>
+
+                            <?php endforeach; ?>
+
+                        </ul>
+
+                    </div>
+
+                <?php endif; ?>
 
 
                 <!-- CARA MENGOLAH -->
@@ -405,7 +526,7 @@ if ($caraMasak !== '') {
                             <?php else: ?>
 
                                 <div class="menu-card-no-img">
-                                    🍱
+                                    <?= ikonMenuHtml($item); ?>
                                 </div>
 
                             <?php endif; ?>

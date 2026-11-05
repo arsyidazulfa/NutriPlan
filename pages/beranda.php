@@ -46,6 +46,16 @@
                 Mulai Sekarang
             </a>
 
+        <?php elseif (($_SESSION['role'] ?? '') === 'ortu'): ?>
+
+            <a
+                href="/index.php?page=data_anak"
+                class="btn-primary"
+                style="align-self:flex-start; font-size:18px; padding:16px 40px;"
+            >
+                Mulai Susun Menu
+            </a>
+
         <?php else: ?>
 
             <a
@@ -73,6 +83,42 @@
 </section>
 
 
+<!-- LANGKAH PENGGUNAAN -->
+<?php
+$langkahPenggunaan = [
+    ['data_anak', 'Isi Data Anak', 'Tanggal lahir, berat badan, tinggi badan, dan alergi anak.'],
+    ['sumber_protein', 'Pilih Sumber Protein', 'Protein hewani atau nabati, lalu tanggal mulai planning.'],
+    ['planning_mingguan', 'Pilih Menu Mingguan', 'Satu menu untuk sarapan, makan siang, dan makan malam, Senin sampai Minggu.'],
+    ['cara_mengolah', 'Lihat Cara Mengolah', 'Bahan, langkah memasak, dan unduh jadwal dalam bentuk PDF.'],
+];
+?>
+<section class="section langkah-section">
+
+    <h2 class="section-title">
+        Cara Menyusun Menu
+    </h2>
+
+    <p class="section-subtitle">
+        Ikuti empat langkah berikut untuk menyusun menu anak selama satu minggu.
+    </p>
+
+    <ol class="langkah-list">
+        <?php foreach ($langkahPenggunaan as $nomor => [$halaman, $judul, $keterangan]): ?>
+            <li>
+                <a href="/index.php?page=<?= isLoggedIn() ? $halaman : 'login'; ?>">
+                    <span class="langkah-nomor"><?= $nomor + 1; ?></span>
+                    <span>
+                        <strong><?= htmlspecialchars($judul); ?></strong>
+                        <small><?= htmlspecialchars($keterangan); ?></small>
+                    </span>
+                </a>
+            </li>
+        <?php endforeach; ?>
+    </ol>
+
+</section>
+
+
 
 <!-- ABOUT / FITUR -->
 <section class="about-section">
@@ -96,8 +142,8 @@
 
             <p>
                 NutriPlan adalah platform perencanaan menu makan
-                sehat anak berbasis angka kecukupan gizi (AKG)
-                Kemenkes 2023.
+                sehat anak berbasis Angka Kecukupan Gizi (AKG)
+                Permenkes Nomor 28 Tahun 2019.
             </p>
 
             <p>
@@ -161,6 +207,8 @@
 
 <?php
 
+require_once ROOT . '/helpers/ikon_menu.php';
+
 $menus = [];
 
 $result = mysqli_query(
@@ -168,7 +216,8 @@ $result = mysqli_query(
     "SELECT
         id_menu,
         nama_menu,
-        gambar
+        gambar,
+        jenis_lauk
      FROM menu
      ORDER BY id_menu ASC
      LIMIT 6"
@@ -222,7 +271,7 @@ if ($result) {
                     <?php else: ?>
 
                         <div class="menu-card-no-img">
-                            🍱
+                            <?= ikonMenuHtml($menu); ?>
                         </div>
 
                     <?php endif; ?>

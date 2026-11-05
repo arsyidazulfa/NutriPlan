@@ -1,9 +1,10 @@
-            <?php
+<?php
 
             /** @var mysqli $conn */
 
             require_once ROOT . '/classes/RencanaMingguanRepository.php';
             require_once ROOT . '/helpers/rekomendasi.php';
+            require_once ROOT . '/helpers/ikon_menu.php';
 
             $repository = new RencanaMingguanRepository($conn);
             $id_user = (int) ($_SESSION['id_user'] ?? 0);
@@ -98,7 +99,12 @@
                     return $gambar;
                 }
 
-                return '/uploads/menu/' . ltrim($gambar, '/');
+                // Sama seperti beranda dan katalog: foto menu disimpan di assets/images.
+                $gambar = ltrim($gambar, '/');
+
+                return is_file(ROOT . '/assets/images/' . $gambar)
+                    ? '/assets/images/' . $gambar
+                    : '';
             }
 
             function dataAnakTampil(array $anak, array $keys, string $default = '-'): string
@@ -254,9 +260,41 @@
                         }
                         unset($pilihanHari);
                     }
-                } catch (InvalidArgumentException $e) {
+                } catch (InvalidArgumentException | RuntimeException $e) {
                     $error = $e->getMessage();
                 }
+            }
+
+            $labelJenisLauk = [
+                'ayam' => 'Ayam',
+                'sapi' => 'Daging Sapi',
+                'kambing' => 'Daging Kambing',
+                'ikan' => 'Ikan',
+                'udang' => 'Udang',
+                'telur' => 'Telur',
+                'tahu' => 'Tahu',
+                'tempe' => 'Tempe',
+            ];
+
+            // Jenis lauk yang tersedia pada tiap waktu makan, untuk tombol pilihan.
+            $jenisPerSlot = [];
+            foreach ($menus as $slot => $daftarMenu) {
+                $ada = array_column($daftarMenu, 'jenis_lauk');
+                $jenisPerSlot[$slot] = array_values(array_filter(
+                    array_keys($labelJenisLauk),
+                    static fn($jenis) => in_array($jenis, $ada, true)
+                ));
+            }
+
+            function selisihTampil(float $nilai, string $satuan): string
+            {
+                $angka = number_format(abs($nilai), 0, ',', '.');
+
+                if ($angka === '0') {
+                    return '0 ' . $satuan;
+                }
+
+                return ($nilai > 0 ? '+' : '−') . $angka . ' ' . $satuan;
             }
 
             $dataAnak = $anak ? [
@@ -267,12 +305,17 @@
                 ['Tinggi Badan', dataAnakTampil($anak, ['tinggi_badan', 'tb']) . ' cm'],
             ] : [];
 
+            $kebutuhanHarian = $anak && (float) ($anak['berat_badan_ideal'] ?? 0) > 0
+                ? number_format((float) $anak['kebutuhan_energi'], 0, ',', '.') . ' kkal · protein '
+                    . number_format((float) $anak['kebutuhan_protein'], 1, ',', '.') . ' g'
+                : 'Belum dihitung';
+
             $nutrisiTampil = [
-                'energi' => ['Kalori', 'kkal'],
-                'protein' => ['Protein', 'g'],
-                'karbohidrat' => ['Karbohidrat', 'g'],
-                'lemak' => ['Lemak', 'g'],
-                'serat' => ['Serat', 'g'],
+                'total_energi' => ['Kalori', 'kkal'],
+                'total_protein' => ['Protein', 'g'],
+                'total_karbohidrat' => ['Karbohidrat', 'g'],
+                'total_lemak' => ['Lemak', 'g'],
+                'total_serat' => ['Serat', 'g'],
             ];
             ?>
 
@@ -296,13 +339,14 @@
         <div class="planning-page">
             <div class="planning-header">
                 <div>
+                    <span class="sp-step">Langkah 3</span>
                     <h1 class="planning-title">Pilih Menu Mingguan</h1>
                 </div>
             </div>
 
             <?php if ($error): ?>
                 <div class="planning-alert planning-alert-error">
-                    <strong>Planning belum berhasil disimpan.</strong><br>
+                    <strong>Menu belum dapat ditampilkan.</strong><br>
                     <?= esc($error); ?>
                 </div>
             <?php endif; ?>
@@ -353,13 +397,35 @@
                                 </div>
                             <?php endforeach; ?>
                         </div>
+
+                        <div class="child-need">
+                            <span>Kebutuhan harian</span>
+                            <strong><?= esc($kebutuhanHarian); ?></strong>
+                        </div>
                     </section>
 
                     <div class="planning-settings">
                         <div class="planning-settings-text">
-                            <strong>Planning 7 hari:</strong>
-                            Senin sampai Minggu dengan 3 kali makan per hari:
-                            sarapan, makan siang, dan makan malam.
+                            <strong>Cara memilih:</strong>
+                            buka tiap hari dari Senin sampai Minggu, lalu pilih 1 menu
+                            untuk sarapan, makan siang, dan makan malam.
+                            Menu paling atas adalah yang paling mendekati kebutuhan anak.
+                            Hari yang sudah lengkap diberi tanda ✓.
+                            Kalau ingin cepat, tekan <strong>Isi otomatis</strong>,
+                            lalu ganti menu yang kurang cocok.
+                            Nilai gizi pada kartu adalah 1 porsi lauk ditambah nasi
+                            dengan takaran yang tertulis.
+                        </div>
+
+                        <div class="planning-actions">
+                            <button type="button" id="isiOtomatis" class="isi-otomatis">
+                                Isi otomatis yang masih kosong
+                            </button>
+
+                            <label class="hitung-toggle">
+                                <input type="checkbox" id="tampilHitung">
+                                Tampilkan detail perhitungan (target, selisih, skor)
+                            </label>
                         </div>
                     </div>
 
@@ -408,22 +474,37 @@
                                             <span class="meal-section-subtitle"><?= esc($meta['subtitle']); ?></span>
                                         </div>
 
+                                        <?php if (count($jenisPerSlot[$slot] ?? []) > 1): ?>
+                                            <div class="lauk-filter" role="group" aria-label="Pilih jenis lauk">
+                                                <button type="button" class="lauk-chip active" data-jenis="" aria-pressed="true">
+                                                    Semua
+                                                </button>
+                                                <?php foreach ($jenisPerSlot[$slot] as $jenis): ?>
+                                                    <button type="button" class="lauk-chip" data-jenis="<?= esc($jenis); ?>" aria-pressed="false">
+                                                        <?= esc($labelJenisLauk[$jenis]); ?>
+                                                    </button>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php endif; ?>
+
                                         <div class="menu-grid">
                                             <?php if (empty($menus[$slot] ?? [])): ?>
                                                 <div class="menu-empty">
                                                     Belum ada menu <?= esc(strtolower($label)); ?> untuk sumber protein ini.
                                                 </div>
                                             <?php else: ?>
-                                                <?php foreach ($menus[$slot] as $menu): ?>
+                                                <?php foreach (array_values($menus[$slot]) as $urutan => $menu): ?>
                                                     <?php
                                                     $id_menu = (int) $menu['id_menu'];
                                                     $is_checked = (string) $nilai_dipilih === (string) $id_menu;
                                                     $nama_menu = $menu['nama_menu'] ?? 'Menu';
                                                     $gambar = gambarMenu($menu);
-                                                    $harga = $menu['harga'] ?? null;
                                                     ?>
 
-                                                    <label class="menu-card <?= $is_checked ? 'selected' : ''; ?>">
+                                                    <label
+                                                        class="menu-card <?= $is_checked ? 'selected' : ''; ?>"
+                                                        data-jenis="<?= esc($menu['jenis_lauk'] ?? ''); ?>"
+                                                    >
                                                         <input
                                                             type="radio"
                                                             name="menu[<?= $hari_ke; ?>][<?= esc($slot); ?>]"
@@ -442,12 +523,20 @@
                                                                     loading="lazy"
                                                                 >
                                                             <?php else: ?>
-                                                                <div class="menu-image-placeholder">🍽</div>
+                                                                <div class="menu-image-placeholder"><?= ikonMenuHtml($menu); ?></div>
                                                             <?php endif; ?>
                                                         </div>
 
                                                         <div class="menu-card-body">
+                                                            <?php if ($urutan === 0): ?>
+                                                                <span class="menu-badge">Paling sesuai</span>
+                                                            <?php endif; ?>
+
                                                             <h5 class="menu-name"><?= esc($nama_menu); ?></h5>
+
+                                                            <p class="menu-portion">
+                                                                1 porsi lauk + nasi <?= (int) $menu['nasi_gram']; ?> g
+                                                            </p>
 
                                                             <div class="menu-nutrition">
                                                                 <?php foreach ($nutrisiTampil as $key => [$labelNutrisi, $satuan]): ?>
@@ -457,14 +546,14 @@
                                                                     </div>
                                                                 <?php endforeach; ?>
 
-                                                                <?php if ($harga !== null && $harga !== ''): ?>
-                                                                    <div class="menu-price">
-                                                                        Perkiraan harga:
-                                                                        <strong>
-                                                                            Rp <?= number_format((float) $harga, 0, ',', '.'); ?>
-                                                                        </strong>
-                                                                    </div>
-                                                                <?php endif; ?>
+                                                                <div class="menu-price menu-hitung">
+                                                                    Target <?= esc(strtolower($label)); ?>:
+                                                                    <strong><?= number_format((float) $menu['target_energi'], 0, ',', '.'); ?> kkal</strong>
+                                                                    · selisih
+                                                                    <strong><?= esc(selisihTampil((float) $menu['selisih_energi'], 'kkal')); ?></strong>
+                                                                    · skor
+                                                                    <strong><?= number_format((float) $menu['skor'], 4, ',', '.'); ?></strong>
+                                                                </div>
                                                             </div>
 
                                                             <span class="menu-select-button">
@@ -475,8 +564,19 @@
                                                 <?php endforeach; ?>
                                             <?php endif; ?>
                                         </div>
+
+                                        <div class="meal-actions">
+                                            <button type="button" class="menu-more" hidden>Lihat menu lainnya</button>
+                                            <button type="button" class="menu-change" hidden>Ganti menu</button>
+                                        </div>
                                     </div>
                                 <?php endforeach; ?>
+
+                                <?php if (isset($hari_list[$index + 1])): ?>
+                                    <button type="button" class="day-next" data-next="<?= $hari_ke + 1; ?>">
+                                        Lanjut ke hari <?= esc($hari_list[$index + 1]); ?> →
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         </section>
                     <?php endforeach; ?>
@@ -505,6 +605,8 @@
                         </button>
                     </div>
                 </form>
+
+                <div id="planningToast" class="planning-toast" role="status" aria-live="polite" hidden></div>
             <?php endif; ?>
         </div>
     </main>

@@ -184,6 +184,137 @@ function ambilStandarAntropometri(
 }
 
 /**
+ * Usia-tinggi (height age): umur pada standar TB/U WHO yang
+ * mediannya paling dekat dengan tinggi badan anak.
+ *
+ * Rekomendasi IDAI 2011, Asuhan Nutrisi Pediatrik, bagian 5.2:
+ * "Usia-tinggi ialah usia bila tinggi badan anak tersebut
+ * merupakan P50 pada grafik."
+ *
+ * Pencarian memakai seluruh rentang standar (61–228 bulan),
+ * karena usia-tinggi bisa berada di luar umur anak sendiri.
+ */
+function cariUsiaTinggi(
+    mysqli $conn,
+    string $jenisKelamin,
+    float $tinggiBadan
+): ?int {
+
+    if ($tinggiBadan <= 0) {
+        throw new InvalidArgumentException(
+            'Tinggi badan harus lebih dari 0 cm.'
+        );
+    }
+
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT umur_bulan
+         FROM standar_antropometri
+         WHERE indikator = 'tb_u'
+           AND jenis_kelamin = ?
+         ORDER BY ABS(M - ?) ASC, umur_bulan ASC
+         LIMIT 1"
+    );
+
+    if (!$stmt) {
+        throw new RuntimeException(
+            'Gagal menyiapkan query usia-tinggi: '
+            . mysqli_error($conn)
+        );
+    }
+
+    mysqli_stmt_bind_param(
+        $stmt,
+        'sd',
+        $jenisKelamin,
+        $tinggiBadan
+    );
+
+    mysqli_stmt_execute($stmt);
+
+    $data = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+
+    mysqli_stmt_close($stmt);
+
+    return $data ? (int) $data['umur_bulan'] : null;
+}
+
+
+/**
+ * Median IMT/U WHO pada umur tertentu (z-score = 0).
+ */
+function ambilMedianIMTU(
+    mysqli $conn,
+    string $jenisKelamin,
+    int $umurBulan
+): ?float {
+
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT median
+         FROM standar_antropometri
+         WHERE indikator = 'imt_u'
+           AND jenis_kelamin = ?
+           AND umur_bulan = ?
+         LIMIT 1"
+    );
+
+    if (!$stmt) {
+        throw new RuntimeException(
+            'Gagal menyiapkan query median IMT/U: '
+            . mysqli_error($conn)
+        );
+    }
+
+    mysqli_stmt_bind_param(
+        $stmt,
+        'si',
+        $jenisKelamin,
+        $umurBulan
+    );
+
+    mysqli_stmt_execute($stmt);
+
+    $data = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+
+    mysqli_stmt_close($stmt);
+
+    return $data ? (float) $data['median'] : null;
+}
+
+
+/**
+ * Berat badan ideal = median IMT/U pada usia-tinggi × TB² (m).
+ *
+ * IDAI 2011 mendefinisikan berat badan ideal sebagai berat badan
+ * menurut tinggi badan pada P50. WHO Reference 2007 tidak memuat
+ * tabel BB/TB untuk usia di atas 5 tahun, sehingga berat pada P50
+ * diturunkan dari median IMT pada usia-tinggi anak.
+ */
+function hitungBeratBadanIdeal(
+    float $medianImt,
+    float $tinggiBadan
+): float {
+
+    if ($medianImt <= 0) {
+        throw new InvalidArgumentException(
+            'Median IMT/U harus lebih dari 0.'
+        );
+    }
+
+    if ($tinggiBadan <= 0) {
+        throw new InvalidArgumentException(
+            'Tinggi badan harus lebih dari 0 cm.'
+        );
+    }
+
+    $tinggiMeter = $tinggiBadan / 100;
+
+    return round($medianImt * $tinggiMeter * $tinggiMeter, 2);
+}
+
+
+/**
  * Hitung z-score IMT/U menggunakan metode LMS WHO.
  *
  * z = ((y/M)^L - 1) / (S × L)

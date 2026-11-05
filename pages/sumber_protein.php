@@ -50,6 +50,49 @@ function spTanggalSeninDepan(): string
 
 /*
 |--------------------------------------------------------------------------
+| PILIHAN MINGGU PLANNING
+|--------------------------------------------------------------------------
+| Orang tua memilih minggu (Senin–Minggu), bukan tanggal bebas,
+| supaya tanggal mulai selalu hari Senin.
+*/
+function spPilihanMinggu(string $terpilih): array
+{
+    $bulan = [1 => 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+    $label = static function (DateTime $senin) use ($bulan): string {
+        $minggu = (clone $senin)->modify('+6 days');
+
+        return (int) $senin->format('j') . ' ' . $bulan[(int) $senin->format('n')]
+            . ' – ' . (int) $minggu->format('j') . ' ' . $bulan[(int) $minggu->format('n')]
+            . ' ' . $minggu->format('Y');
+    };
+
+    $pilihan = [];
+    $senin = new DateTime('monday this week');
+
+    for ($i = 0; $i < 8; $i++) {
+        $keterangan = [0 => ' (minggu ini)', 1 => ' (minggu depan)'][$i] ?? '';
+        $pilihan[$senin->format('Y-m-d')] = $label($senin) . $keterangan;
+        $senin->modify('+7 days');
+    }
+
+    // Planning lama yang dimulai sebelum minggu ini tetap bisa dipilih.
+    $tanggal = DateTime::createFromFormat('!Y-m-d', $terpilih);
+
+    if (
+        $tanggal
+        && $tanggal->format('Y-m-d') === $terpilih
+        && (int) $tanggal->format('N') === 1
+        && !isset($pilihan[$terpilih])
+    ) {
+        $pilihan = [$terpilih => $label($tanggal)] + $pilihan;
+    }
+
+    return $pilihan;
+}
+
+/*
+|--------------------------------------------------------------------------
 | PILIHAN SUMBER PROTEIN
 |--------------------------------------------------------------------------
 | Nilai "nabati" dan "hewani" tetap dipakai untuk database/filter.
@@ -258,7 +301,7 @@ if (
             <div class="sp-header">
 
                 <span class="sp-step">
-                    Langkah 1
+                    Langkah 2
                 </span>
 
                 <h1>
@@ -402,22 +445,26 @@ if (
                     <div class="sp-field">
 
                         <label for="tanggal_mulai">
-                            Mulai planning
+                            Minggu planning
                         </label>
 
-                        <input
-                            type="date"
+                        <select
                             id="tanggal_mulai"
                             name="tanggal_mulai"
-                            value="<?= htmlspecialchars(
-                                $tanggalMulai
-                            ); ?>"
                             required
                         >
+                            <?php foreach (spPilihanMinggu($tanggalMulai) as $tanggal => $labelMinggu): ?>
+                                <option
+                                    value="<?= htmlspecialchars($tanggal); ?>"
+                                    <?= $tanggal === $tanggalMulai ? 'selected' : ''; ?>
+                                >
+                                    <?= htmlspecialchars($labelMinggu); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
 
                         <div class="sp-help">
-                            Pilih hari Senin sebagai tanggal mulai planning
-                            untuk Senin sampai Minggu.
+                            Planning berlaku 7 hari, dari Senin sampai Minggu.
                         </div>
 
                     </div>

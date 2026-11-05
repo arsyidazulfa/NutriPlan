@@ -2,6 +2,7 @@
 
 require_once ROOT . '/helpers/antropometri.php';
 require_once ROOT . '/helpers/akg.php';
+require_once ROOT . '/helpers/kebutuhan.php';
 
 /** @var mysqli $conn */
 
@@ -120,48 +121,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $statusTinggi = $antropometri['status_tbu'];
             $statusGizi = $antropometri['status_imtu'];
 
-            $akg = hitungAKG($usia, $jenisKelamin);
-            if (!$akg) {
-                throw new RuntimeException('Data AKG untuk usia anak tidak ditemukan.');
-            }
+            // Kebutuhan harian = berat badan ideal × AKG per kg menurut usia-tinggi.
+            $kebutuhan = hitungKebutuhanAnak($conn, $jenisKelamin, $tinggiBadan);
 
-            $energi = (float) $akg['energi'];
-            $protein = (float) $akg['protein'];
+            $beratIdeal = (float) $kebutuhan['berat_badan_ideal'];
+            $energi = (float) $kebutuhan['energi'];
+            $protein = (float) $kebutuhan['protein'];
 
             if ($anak) {
                 $sql = 'UPDATE data_anak SET
                     nama_anak = ?, usia = ?, tanggal_lahir = ?, tanggal_pengukuran = ?,
                     usia_bulan_eksak = ?, jenis_kelamin = ?, berat_badan = ?, tinggi_badan = ?,
                     aktivitas = ?, alergi = ?, alergi_lainnya = ?, zscore_tb_u = ?, zscore_imt_u = ?,
-                    status_tinggi_badan = ?, status_gizi = ?, kebutuhan_energi = ?, kebutuhan_protein = ?
+                    status_tinggi_badan = ?, status_gizi = ?, berat_badan_ideal = ?,
+                    kebutuhan_energi = ?, kebutuhan_protein = ?
                     WHERE id_user = ?';
                 $stmtSimpan = mysqli_prepare($conn, $sql);
                 if (!$stmtSimpan) throw new RuntimeException('Query update data anak gagal.');
 
                 mysqli_stmt_bind_param(
                     $stmtSimpan,
-                    'sissisddsssddssddi',
+                    'sissisddsssddssdddi',
                     $namaAnak, $usia, $tanggalLahir, $tanggalPengukuran, $usiaBulan,
                     $jenisKelamin, $beratBadan, $tinggiBadan, $aktivitas, $alergiStr,
                     $alergiLain, $zTBU, $zIMTU, $statusTinggi, $statusGizi,
-                    $energi, $protein, $idUser
+                    $beratIdeal, $energi, $protein, $idUser
                 );
             } else {
                 $sql = 'INSERT INTO data_anak
                     (id_user, nama_anak, usia, tanggal_lahir, tanggal_pengukuran, usia_bulan_eksak,
                      jenis_kelamin, berat_badan, tinggi_badan, aktivitas, alergi, alergi_lainnya,
                      zscore_tb_u, zscore_imt_u, status_tinggi_badan, status_gizi,
-                     kebutuhan_energi, kebutuhan_protein)
-                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
+                     berat_badan_ideal, kebutuhan_energi, kebutuhan_protein)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
                 $stmtSimpan = mysqli_prepare($conn, $sql);
                 if (!$stmtSimpan) throw new RuntimeException('Query insert data anak gagal.');
 
                 mysqli_stmt_bind_param(
                     $stmtSimpan,
-                    'isissisddsssddssdd',
+                    'isissisddsssddssddd',
                     $idUser, $namaAnak, $usia, $tanggalLahir, $tanggalPengukuran, $usiaBulan,
                     $jenisKelamin, $beratBadan, $tinggiBadan, $aktivitas, $alergiStr,
-                    $alergiLain, $zTBU, $zIMTU, $statusTinggi, $statusGizi, $energi, $protein
+                    $alergiLain, $zTBU, $zIMTU, $statusTinggi, $statusGizi,
+                    $beratIdeal, $energi, $protein
                 );
             }
 
@@ -198,7 +200,19 @@ if ($hasilSiap) {
     $imtTampil = hitungIMT((float) $anak['berat_badan'], (float) $anak['tinggi_badan']);
 }
 
+// Data anak versi lama belum punya berat badan ideal; kebutuhannya perlu dihitung ulang.
+$kebutuhanSiap = $hasilSiap && (float) ($anak['berat_badan_ideal'] ?? 0) > 0;
+if ($kebutuhanSiap) {
+    $usiaTinggiTampil = (int) cariUsiaTinggi(
+        $conn,
+        $anak['jenis_kelamin'],
+        (float) $anak['tinggi_badan']
+    );
+}
+
 $e = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+// 24,5 tetap 24,5; 125,0 ditulis 125.
+$angka = static fn($nilai): string => rtrim(rtrim(number_format((float) $nilai, 1, ',', '.'), '0'), ',');
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -214,8 +228,11 @@ $e = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 
         .hasil-gizi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.hasil-section{padding:22px 24px;border-right:1px solid #ecefec}.hasil-section:last-child{border-right:none}.hasil-section h4{margin:0 0 14px;font-size:15px;color:#4f5d53}.hasil-section-kebutuhan{background:#fafcfb}
         .hasil-row{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:11px 0;border-bottom:1px solid #f0f2f0}.hasil-row:last-child{border-bottom:none}.hasil-label{font-size:14px;line-height:1.5;color:#69746c}.hasil-row strong{text-align:right;color:#163d25}
         .hasil-value-status{display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right}.hasil-value-status small{color:#89918b;font-size:12px}.status-badge{display:inline-block;padding:5px 10px;border-radius:999px;background:#e8f3eb;color:#22643a!important;font-size:13px;line-height:1.4}.hasil-utama{font-size:17px;color:#175d32!important}
+        .hasil-catatan{margin:10px 0 0;color:#69746c;font-size:12px;line-height:1.5}
+        .hasil-label small{display:block;margin-top:2px;color:#89918b;font-size:12px}
+        .hasil-detail{border-top:1px solid #ecefec}.hasil-detail summary{padding:14px 24px;color:#22643a;cursor:pointer;font-size:14px;font-weight:600}.hasil-detail-isi{padding:0 24px 14px}
         @media(max-width:950px){.hasil-gizi-grid{grid-template-columns:1fr}.hasil-section{border-right:none;border-bottom:1px solid #ecefec}.hasil-section:last-child{border-bottom:none}}
-        @media(max-width:520px){.hasil-gizi-header,.hasil-section{padding:18px}.hasil-row{flex-direction:column;gap:5px}.hasil-row strong,.hasil-value-status{text-align:left;align-items:flex-start}}
+        @media(max-width:520px){.hasil-detail summary{padding:14px 18px}.hasil-detail-isi{padding:0 18px 12px}.hasil-gizi-header,.hasil-section{padding:18px}.hasil-row{flex-direction:column;gap:5px}.hasil-row strong,.hasil-value-status{text-align:left;align-items:flex-start}}
     </style>
 </head>
 <body>
@@ -223,6 +240,7 @@ $e = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 
 <div class="dashboard-wrap">
     <?php include ROOT . '/includes/sidebar.php'; ?>
     <main class="dashboard-content">
+        <span class="sp-step">Langkah 1</span>
         <h2>Data Anak</h2>
 
         <?php if ($error): ?><div class="flash flash-error"><?= $e($error) ?></div><?php endif; ?>
@@ -238,7 +256,7 @@ $e = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 
                     <div class="hasil-section">
                         <h4>Data Pengukuran</h4>
                         <div class="hasil-row"><span class="hasil-label">Usia saat pengukuran</span><strong><?= $usiaTahunTampil ?> tahun <?= $usiaBulanSisa ?> bulan</strong></div>
-                        <div class="hasil-row"><span class="hasil-label">Indeks Massa Tubuh (IMT)</span><strong><?= number_format($imtTampil, 2, ',', '.') ?> kg/m²</strong></div>
+                        <div class="hasil-row"><span class="hasil-label">Berat dan tinggi badan</span><strong><?= $angka($anak['berat_badan']) ?> kg · <?= $angka($anak['tinggi_badan']) ?> cm</strong></div>
                     </div>
 
                     <div class="hasil-section">
@@ -251,7 +269,6 @@ $e = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 
                                 <span class="hasil-label"><?= $label ?></span>
                                 <div class="hasil-value-status">
                                     <strong class="status-badge"><?= $e($anak[$statusKey]) ?></strong>
-                                    <small>Z-score: <?= number_format((float) $anak[$zKey], 2, ',', '.') ?></small>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -259,10 +276,28 @@ $e = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 
 
                     <div class="hasil-section hasil-section-kebutuhan">
                         <h4>Kebutuhan Gizi Harian</h4>
-                        <div class="hasil-row"><span class="hasil-label">Energi</span><strong class="hasil-utama"><?= number_format((float) $anak['kebutuhan_energi'], 0, ',', '.') ?> kkal/hari</strong></div>
-                        <div class="hasil-row"><span class="hasil-label">Protein</span><strong class="hasil-utama"><?= number_format((float) $anak['kebutuhan_protein'], 0, ',', '.') ?> g/hari</strong></div>
+                        <?php if ($kebutuhanSiap): ?>
+                            <div class="hasil-row"><span class="hasil-label">Energi</span><strong class="hasil-utama"><?= number_format((float) $anak['kebutuhan_energi'], 0, ',', '.') ?> kkal/hari</strong></div>
+                            <div class="hasil-row"><span class="hasil-label">Protein</span><strong class="hasil-utama"><?= number_format((float) $anak['kebutuhan_protein'], 1, ',', '.') ?> g/hari</strong></div>
+                            <p class="hasil-catatan">Angka ini dipakai untuk memilih menu sarapan, makan siang, dan makan malam.</p>
+                        <?php else: ?>
+                            <div class="hasil-row"><span class="hasil-label">Kebutuhan gizi perlu dihitung ulang. Tekan tombol simpan di bawah untuk memperbaruinya.</span></div>
+                        <?php endif; ?>
                     </div>
                 </div>
+
+                <details class="hasil-detail">
+                    <summary>Lihat detail perhitungan</summary>
+                    <div class="hasil-detail-isi">
+                        <div class="hasil-row"><span class="hasil-label">Indeks Massa Tubuh (IMT)</span><strong><?= number_format($imtTampil, 2, ',', '.') ?> kg/m²</strong></div>
+                        <div class="hasil-row"><span class="hasil-label">Z-score tinggi badan menurut umur (TB/U)</span><strong><?= number_format((float) $anak['zscore_tb_u'], 2, ',', '.') ?></strong></div>
+                        <div class="hasil-row"><span class="hasil-label">Z-score IMT menurut umur (IMT/U)</span><strong><?= number_format((float) $anak['zscore_imt_u'], 2, ',', '.') ?></strong></div>
+                        <?php if ($kebutuhanSiap): ?>
+                            <div class="hasil-row"><span class="hasil-label">Usia-tinggi<small>Umur ketika tinggi rata-rata anak sama dengan tinggi anak ini.</small></span><strong><?= intdiv($usiaTinggiTampil, 12) ?> tahun <?= $usiaTinggiTampil % 12 ?> bulan</strong></div>
+                            <div class="hasil-row"><span class="hasil-label">Berat badan ideal<small>Berat yang sesuai untuk tinggi badan anak ini.</small></span><strong><?= number_format((float) $anak['berat_badan_ideal'], 2, ',', '.') ?> kg</strong></div>
+                        <?php endif; ?>
+                    </div>
+                </details>
             </div>
         <?php endif; ?>
 
@@ -292,7 +327,7 @@ $e = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 
             <div class="dash-form-group">
                 <label>Tanggal Pengukuran Berat dan Tinggi Badan</label>
                 <input type="date" name="tanggal_pengukuran" value="<?= $e($tanggalPengukuranForm) ?>" max="<?= date('Y-m-d') ?>" required>
-                <small style="color:#777">Isi sesuai tanggal saat berat dan tinggi badan diukur.</small>
+                <small style="color:#777">Isi sesuai tanggal saat berat dan tinggi badan diukur. Kalau baru saja ditimbang dan diukur, biarkan tanggal hari ini.</small>
             </div>
 
             <div class="dash-form-row">
@@ -307,13 +342,13 @@ $e = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 
             </div>
 
             <div class="dash-form-group">
-                <label>Tingkat Aktivitas</label>
+                <label>Tingkat Aktivitas <span style="color:#94a3b8;font-weight:500">(boleh dilewati)</span></label>
                 <select name="aktivitas" required>
                     <?php foreach (['Ringan', 'Sedang', 'Berat'] as $akt): ?>
                         <option value="<?= $e($akt) ?>" <?= ($form['aktivitas'] ?? 'Sedang') === $akt ? 'selected' : '' ?>><?= $e($akt) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <small style="color:#777">Aktivitas dicatat sebagai informasi profil anak.</small>
+                <small style="color:#777">Hanya dicatat sebagai profil anak, tidak mengubah hitungan kebutuhan gizi.</small>
             </div>
 
             <div class="dash-form-group">

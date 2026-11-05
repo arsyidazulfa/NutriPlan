@@ -1,7 +1,59 @@
 <?php
 
 /**
- * Menghitung kebutuhan energi dan protein harian anak
+ * Angka Kecukupan Gizi per kelompok umur.
+ * Sumber: Permenkes No. 28 Tahun 2019, Lampiran I, Tabel 1.
+ *
+ * Tiap baris: batas umur atas (tahun), kelompok, lalu
+ * [BB rujukan (kg), energi (kkal), protein (g)] per jenis kelamin.
+ * Kelompok 4–6 dan 7–9 tahun tidak dibedakan menurut jenis kelamin.
+ */
+function akgKelompokUmur(
+    int $usiaTahun,
+    string $jenisKelamin
+): ?array {
+
+    if (!in_array(
+        $jenisKelamin,
+        ['Laki-laki', 'Perempuan'],
+        true
+    )) {
+        throw new InvalidArgumentException(
+            'Jenis kelamin tidak valid.'
+        );
+    }
+
+    if ($usiaTahun < 4 || $usiaTahun > 18) {
+        return null;
+    }
+
+    $tabel = [
+        [6,  '4-6',   'Laki-laki' => [19, 1400, 25], 'Perempuan' => [19, 1400, 25]],
+        [9,  '7-9',   'Laki-laki' => [27, 1650, 40], 'Perempuan' => [27, 1650, 40]],
+        [12, '10-12', 'Laki-laki' => [36, 2000, 50], 'Perempuan' => [38, 1900, 55]],
+        [15, '13-15', 'Laki-laki' => [50, 2400, 70], 'Perempuan' => [48, 2050, 65]],
+        [18, '16-18', 'Laki-laki' => [60, 2650, 75], 'Perempuan' => [52, 2100, 65]],
+    ];
+
+    foreach ($tabel as $baris) {
+        if ($usiaTahun <= $baris[0]) {
+            [$bbRujukan, $energi, $protein] = $baris[$jenisKelamin];
+
+            return [
+                'kelompok_akg' => $baris[1],
+                'bb_rujukan' => $bbRujukan,
+                'energi' => $energi,
+                'protein' => $protein
+            ];
+        }
+    }
+
+    return null;
+}
+
+
+/**
+ * AKG energi dan protein harian untuk anak usia 6–12 tahun
  * berdasarkan Permenkes No. 28 Tahun 2019.
  */
 function hitungAKG(
@@ -26,41 +78,12 @@ function hitungAKG(
         return null;
     }
 
-    // AKG 2019: usia 6 tahun mengikuti kelompok 4–6 tahun.
-    if ($usia === 6) {
-        return [
-            'energi' => 1400,
-            'protein' => 25,
-            'kelompok_akg' => '4-6',
-            'kelompok_usia' => $kelompokUsia
-        ];
-    }
+    $akg = akgKelompokUmur($usia, $jenisKelamin);
 
-    // AKG 2019: kelompok usia 7–9 tahun.
-    if ($usia <= 9) {
-        return [
-            'energi' => 1650,
-            'protein' => 40,
-            'kelompok_akg' => '7-9',
-            'kelompok_usia' => $kelompokUsia
-        ];
-    }
-
-    // AKG 2019: laki-laki usia 10–12 tahun.
-    if ($jenisKelamin === 'Laki-laki') {
-        return [
-            'energi' => 2000,
-            'protein' => 50,
-            'kelompok_akg' => '10-12',
-            'kelompok_usia' => $kelompokUsia
-        ];
-    }
-
-    // AKG 2019: perempuan usia 10–12 tahun.
     return [
-        'energi' => 1900,
-        'protein' => 55,
-        'kelompok_akg' => '10-12',
+        'energi' => $akg['energi'],
+        'protein' => $akg['protein'],
+        'kelompok_akg' => $akg['kelompok_akg'],
         'kelompok_usia' => $kelompokUsia
     ];
 }
