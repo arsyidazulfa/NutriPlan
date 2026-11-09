@@ -20,24 +20,30 @@ while ($row = mysqli_fetch_assoc($result)) {
 <?php include ROOT . '/includes/navbar.php'; ?>
 
 <section class="section">
-    <h2 class="section-title">Artikel & Tips Gizi</h2>
+    <h2 class="section-title">Edukasi Gizi</h2>
     <p class="section-subtitle">Pengetahuan nutrisi terpercaya untuk tumbuh kembang anak yang optimal</p>
 
     <?php if ($edukasi): ?>
-    <div class="edukasi-grid">
+    <div class="katalog-grid">
         <?php foreach ($edukasi as $e): ?>
-        <a href="/index.php?page=edukasi_detail&id=<?= $e['id_edukasi'] ?>" class="news-card" style="text-decoration:none; color:inherit;">
-            <?php if ($e['gambar'] && file_exists(ROOT . '/assets/images/' . $e['gambar'])): ?>
-                <img class="news-card-img" src="/assets/images/<?= htmlspecialchars($e['gambar']) ?>" alt="<?= htmlspecialchars($e['judul']) ?>">
-            <?php else: ?>
-                <div class="news-card-img-placeholder">📰</div>
-            <?php endif; ?>
-            <div class="news-card-body">
-                <div class="news-card-title"><?= htmlspecialchars($e['judul']) ?></div>
-                <div class="news-card-excerpt"><?= htmlspecialchars(strip_tags(substr($e['isi'], 0, 160))) ?></div>
-                <div style="margin-top:10px; font-size:12px; color:#aaa;">
-                    <?= date('d M Y', strtotime($e['created_at'])) ?>
+        <a href="/index.php?page=edukasi_detail&id=<?= $e['id_edukasi'] ?>" class="katalog-card" style="text-decoration:none; color:inherit;">
+            <div class="katalog-image-wrap">
+                <?php if ($e['gambar'] && file_exists(ROOT . '/assets/images/' . $e['gambar'])): ?>
+                    <img class="katalog-image" src="/assets/images/<?= htmlspecialchars($e['gambar']) ?>" alt="<?= htmlspecialchars($e['judul']) ?>">
+                <?php else: ?>
+                    <div class="katalog-image-placeholder">📰</div>
+                <?php endif; ?>
+            </div>
+            <div class="katalog-card-body">
+                <div class="katalog-waktu">
+                    <span><?= date('d M Y', strtotime($e['created_at'])) ?></span>
                 </div>
+                <h3 class="katalog-card-title"><?= htmlspecialchars($e['judul']) ?></h3>
+                <p class="katalog-description"><?= htmlspecialchars(strip_tags(substr($e['isi'], 0, 160))) ?></p>
+                <span class="katalog-detail-btn" style="margin-top:auto;">
+                    <span>Baca Artikel</span>
+                    <span>→</span>
+                </span>
             </div>
         </a>
         <?php endforeach; ?>

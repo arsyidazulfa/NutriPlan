@@ -342,7 +342,7 @@ $angka = static fn($nilai): string => rtrim(rtrim(number_format((float) $nilai, 
             </div>
 
             <div class="dash-form-group">
-                <label>Tingkat Aktivitas <span style="color:#94a3b8;font-weight:500">(boleh dilewati)</span></label>
+                <label>Tingkat Aktivitas</label>
                 <select name="aktivitas" required>
                     <?php foreach (['Ringan', 'Sedang', 'Berat'] as $akt): ?>
                         <option value="<?= $e($akt) ?>" <?= ($form['aktivitas'] ?? 'Sedang') === $akt ? 'selected' : '' ?>><?= $e($akt) ?></option>

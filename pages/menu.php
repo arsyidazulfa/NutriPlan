@@ -376,44 +376,7 @@ function katalogLabelProtein(?string $protein): string
                             </p>
 
 
-                            <div class="menu-camilan-gizi">
-
-                                <div>
-
-                                    <strong>
-                                        <?= number_format(
-                                            (float) ($menu['energi'] ?? 0),
-                                            0,
-                                            ',',
-                                            '.'
-                                        ); ?> kkal
-                                    </strong>
-
-                                    <span>
-                                        Energi
-                                    </span>
-
-                                </div>
-
-
-                                <div>
-
-                                    <strong>
-                                        <?= number_format(
-                                            (float) ($menu['protein'] ?? 0),
-                                            1,
-                                            ',',
-                                            '.'
-                                        ); ?> g
-                                    </strong>
-
-                                    <span>
-                                        Protein
-                                    </span>
-
-                                </div>
-
-                            </div>
+                            
 
                         </div>
 
@@ -519,46 +482,9 @@ function katalogLabelProtein(?string $protein): string
                             <?php endif; ?>
 
 
-                            <!-- GIZI -->
+                            <!-- INFORMASI MENU -->
 
-                            <div class="katalog-gizi">
-
-                                <div>
-
-                                    <strong>
-                                        <?= number_format(
-                                            (float) ($menu['energi'] ?? 0),
-                                            0,
-                                            ',',
-                                            '.'
-                                        ); ?> kkal
-                                    </strong>
-
-                                    <span>
-                                        Energi
-                                    </span>
-
-                                </div>
-
-
-                                <div>
-
-                                    <strong>
-                                        <?= number_format(
-                                            (float) ($menu['protein'] ?? 0),
-                                            1,
-                                            ',',
-                                            '.'
-                                        ); ?> g
-                                    </strong>
-
-                                    <span>
-                                        Protein
-                                    </span>
-
-                                </div>
-
-                            </div>
+                            
 
 
                             <!-- DETAIL -->

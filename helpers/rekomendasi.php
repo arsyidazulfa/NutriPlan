@@ -3,23 +3,20 @@
 require_once __DIR__ . '/akg.php';
 require_once __DIR__ . '/gizi_menu.php';
 
-/**
- * Proporsi kebutuhan harian untuk tiap waktu makan utama.
- */
+/* Proporsi kebutuhan harian untuk tiap waktu makan utama */
+
 const PROPORSI_WAKTU_MAKAN = [
     'pagi'  => 0.25,
     'siang' => 0.30,
     'malam' => 0.25
 ];
 
-/**
- * Jumlah menu teratas yang ditampilkan untuk tiap jenis lauk.
- */
+/* Jumlah menu teratas yang ditampilkan untuk tiap jenis lauk */
+
 const MENU_PER_JENIS_LAUK = 3;
 
-/**
- * Mengubah teks alergi menjadi token yang konsisten.
- */
+/* Mengubah teks alergi menjadi token yang konsisten */
+
 function tokenAlergi(string $teks): array
 {
     $tokens = array_map(
@@ -33,9 +30,8 @@ function tokenAlergi(string $teks): array
     )));
 }
 
-/**
- * Mengecek keamanan menu berdasarkan alergi anak.
- */
+/* Mengecek keamanan menu berdasarkan alergi anak */
+
 function menuAmanUntukAnak(array $menu, array $anak): bool
 {
     $alergiAnak = tokenAlergi(implode(',', [
@@ -89,6 +85,15 @@ function targetMenuPlanning(array $anak, string $slot): array
 /**
  * Rule-Based Filtering:
  * R1 usia, R2 protein, R3 waktu makan, R4 alergi.
+ *
+ * Keempat rule ini hard rule: menu baru boleh dihitung skornya
+ * kalau lolos R1 sampai R4. Rule dicek berurutan, dan begitu satu
+ * rule gagal menu langsung ditolak (return false) tanpa mengecek
+ * rule berikutnya.
+ *
+ * $kategoriProtein: sumber protein pilihan orang tua di halaman
+ * planning (hewani/nabati).
+ * $slot: waktu makan yang sedang diisi (pagi/siang/malam).
  */
 function menuLolosHardRule(
     array $menu,
@@ -96,6 +101,8 @@ function menuLolosHardRule(
     string $kategoriProtein,
     string $slot
 ): bool {
+    // Pilihan protein atau waktu makan di luar daftar dianggap
+    // tidak valid, jadi tidak ada menu yang lolos.
     if (
         !in_array($kategoriProtein, ['hewani', 'nabati'], true) ||
         !in_array($slot, ['pagi', 'siang', 'malam'], true)
@@ -104,6 +111,12 @@ function menuLolosHardRule(
     }
 
     // R1 — Kelompok usia
+    // IF kelompok usia menu sama dengan kelompok usia anak
+    //    ATAU menu berlaku untuk 'semua'
+    // THEN lanjut ke R2, ELSE menu ditolak.
+    // Kelompok anak: 6-9 atau 10-12 tahun (kelompokUsia() di
+    // helpers/akg.php). Anak di luar 6-12 tahun tidak punya
+    // kelompok, sehingga semua menu ditolak.
     $kelompokAnak = kelompokUsia((int) ($anak['usia'] ?? 0));
     $kelompokMenu = strtolower(trim(
         (string) ($menu['kelompok_usia'] ?? '')
@@ -117,6 +130,9 @@ function menuLolosHardRule(
     }
 
     // R2 — Sumber protein
+    // IF kategori protein menu (hewani/nabati) sama dengan
+    //    pilihan orang tua di halaman planning
+    // THEN lanjut ke R3, ELSE menu ditolak.
     $proteinMenu = strtolower(trim(
         (string) ($menu['kategori_protein'] ?? '')
     ));
@@ -126,6 +142,9 @@ function menuLolosHardRule(
     }
 
     // R3 — Waktu makan
+    // IF waktu makan yang sedang diisi ada di kolom waktu_makan
+    //    menu (contoh isi kolom: "pagi,siang,malam")
+    // THEN lanjut ke R4, ELSE menu ditolak.
     $waktuMakan = array_map(
         static fn($nilai) => strtolower(trim($nilai)),
         explode(',', (string) ($menu['waktu_makan'] ?? ''))
@@ -136,6 +155,11 @@ function menuLolosHardRule(
     }
 
     // R4 — Alergi
+    // IF tidak ada alergi anak yang sama dengan kandungan alergen
+    //    menu (kolom alergi_kandungan)
+    // THEN menu lolos semua hard rule, ELSE menu ditolak.
+    // Alergi dicocokkan per kata yang dipisah koma, lihat
+    // menuAmanUntukAnak().
     return menuAmanUntukAnak($menu, $anak);
 }
 

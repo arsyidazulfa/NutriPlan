@@ -349,7 +349,7 @@ if ($result) {
 >
 
     <h2 class="section-title">
-        Artikel & Tips Gizi
+        Edukasi Gizi
     </h2>
 
     <p class="section-subtitle">

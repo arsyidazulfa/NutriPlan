@@ -243,79 +243,45 @@ $gambar = detailGambarCamilan($camilan);
 
                         <div class="camilan-detail-gizi">
 
-                            <div>
-                                <span>Energi</span>
-
-                                <strong>
-                                    <?= htmlspecialchars(
-                                        detailNilaiGizi(
-                                            $camilan['energi'],
-                                            'kkal'
-                                        )
-                                    ); ?>
-                                </strong>
-                            </div>
-
-
-                            <div>
-                                <span>Protein</span>
-
-                                <strong>
-                                    <?= htmlspecialchars(
-                                        detailNilaiGizi(
-                                            $camilan['protein'],
-                                            'g'
-                                        )
-                                    ); ?>
-                                </strong>
-                            </div>
-
-
-                            <div>
-                                <span>Karbohidrat</span>
-
-                                <strong>
-                                    <?= htmlspecialchars(
-                                        detailNilaiGizi(
-                                            $camilan['karbohidrat'],
-                                            'g'
-                                        )
-                                    ); ?>
-                                </strong>
-                            </div>
-
-
-                            <div>
-                                <span>Lemak</span>
-
-                                <strong>
-                                    <?= htmlspecialchars(
-                                        detailNilaiGizi(
-                                            $camilan['lemak'],
-                                            'g'
-                                        )
-                                    ); ?>
-                                </strong>
-                            </div>
-
-
-                            <div>
-                                <span>Serat</span>
-
-                                <strong>
-                                    <?= htmlspecialchars(
-                                        detailNilaiGizi(
-                                            $camilan['serat'],
-                                            'g'
-                                        )
-                                    ); ?>
-                                </strong>
-                            </div>
-
+                        <div>
+                            <span>Energi</span>
+                            <strong>
+                                <?= htmlspecialchars(
+                                    detailNilaiGizi($camilan['energi'], 'kkal')
+                                ); ?>
+                            </strong>
                         </div>
 
-                    </section>
+                        <div>
+                            <span>Protein</span>
+                            <strong>
+                                <?= htmlspecialchars(
+                                    detailNilaiGizi($camilan['protein'], 'g')
+                                ); ?>
+                            </strong>
+                        </div>
 
+                        <div>
+                            <span>Karbohidrat</span>
+                            <strong>
+                                <?= htmlspecialchars(
+                                    detailNilaiGizi($camilan['karbohidrat'], 'g')
+                                ); ?>
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Lemak</span>
+                            <strong>
+                                <?= htmlspecialchars(
+                                    detailNilaiGizi($camilan['lemak'], 'g')
+                                ); ?>
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    </section>
 
                     <?php if ($caraMasak): ?>
 

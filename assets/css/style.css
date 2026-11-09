@@ -3987,3 +3987,22 @@ textarea {
         padding: 14px;
     }
 }
+
+/* Kalender tanggal native pada halaman Pilih Sumber Protein */
+.sp-page .sp-field input[type="date"] {
+    display: block;
+    width: 100%;
+    min-height: 46px;
+    color: #1e293b;
+    font-family: inherit;
+    cursor: pointer;
+    color-scheme: light;
+}
+.sp-page .sp-field input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+}
+.sp-page #periodePlanning {
+    margin-top: 10px;
+    line-height: 1.6;
+    color: #64748b;
+}
