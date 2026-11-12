@@ -1,125 +1,46 @@
-// Kalender dropdown pada halaman Pilih Sumber Protein.
-// Tidak mengubah logika pilihan menu dan autosave pada halaman planning.
-document.addEventListener('DOMContentLoaded', function () {
+// Kalender tanggal mulai pada halaman Pilih Sumber Protein.
+// Native picker mengikuti tampilan browser/OS. Hari selain Minggu ditolak.
+document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('tanggal_mulai');
-    const trigger = document.getElementById('sp-calendar-trigger');
-    const popup = document.getElementById('sp-calendar-popup');
-    const value = document.getElementById('sp-date-value');
-    const picker = document.getElementById('sp-date-picker');
-    const monthLabel = document.getElementById('sp-calendar-month');
-    const days = document.getElementById('sp-calendar-days');
-    const periodLabel = document.getElementById('sp-selected-period');
-    const prev = document.getElementById('sp-bulan-prev');
-    const next = document.getElementById('sp-bulan-next');
-    if (!input || !trigger || !popup || !value || !picker || !monthLabel || !days || !periodLabel || !prev || !next) return;
+    const info = document.getElementById('periodePlanning');
+    if (!input || !info) return;
 
-    function parseDate(text) {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
-        const [y, m, d] = text.split('-').map(Number);
-        const date = new Date(y, m - 1, d, 12);
-        return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d ? date : null;
-    }
-    function toISO(date) {
-        return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
-    }
-    const formatLong = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    const formatMonth = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' });
-    const today = new Date();
-    const initial = parseDate(input.value);
-    const current = initial || today;
-    let viewYear = current.getFullYear();
-    let viewMonth = current.getMonth();
+    const pesanAwal = 'Pilih hari Minggu. Planning berlangsung 7 hari sampai Sabtu.';
+    const formatTanggal = tanggal => tanggal.toLocaleDateString('id-ID', {
+        day: 'numeric', month: 'long', year: 'numeric'
+    });
 
-    function openPopup(open) {
-        popup.hidden = !open;
-        trigger.setAttribute('aria-expanded', String(open));
-        picker.classList.toggle('is-open', open);
-        if (open) render();
-    }
-    function showPeriod() {
-        const start = parseDate(input.value);
-        if (!start || start.getDay() !== 1) {
-            value.textContent = 'Pilih hari Senin';
-            periodLabel.textContent = 'Pilih hari Senin untuk menentukan periode planning.';
+    function perbaruiPeriode() {
+        if (!input.value) {
+            input.setCustomValidity('');
+            info.textContent = pesanAwal;
             return;
         }
-        value.textContent = [String(start.getDate()).padStart(2, '0'), String(start.getMonth() + 1).padStart(2, '0'), start.getFullYear()].join('/');
-        const end = new Date(start);
-        end.setDate(end.getDate() + 6);
-        periodLabel.textContent = 'Periode: ' + formatLong.format(start) + ' – ' + formatLong.format(end);
-    }
-    function render() {
-        const first = new Date(viewYear, viewMonth, 1, 12);
-        const offset = (first.getDay() + 6) % 7;
-        const total = new Date(viewYear, viewMonth + 1, 0).getDate();
-        monthLabel.textContent = formatMonth.format(first);
-        days.replaceChildren();
-        for (let i = 0; i < offset; i++) {
-            const placeholder = document.createElement('span');
-            placeholder.setAttribute('aria-hidden', 'true');
-            days.appendChild(placeholder);
+
+        // Jam 12:00 lokal untuk menghindari pergeseran tanggal akibat timezone.
+        const mulai = new Date(input.value + 'T12:00:00');
+        if (Number.isNaN(mulai.getTime())) {
+            input.setCustomValidity('Tanggal tidak valid.');
+            info.textContent = 'Masukkan tanggal yang valid.';
+            return;
         }
-        for (let day = 1; day <= total; day++) {
-            const date = new Date(viewYear, viewMonth, day, 12);
-            const iso = toISO(date);
-            const isMonday = date.getDay() === 1;
-            const cell = document.createElement(isMonday ? 'button' : 'span');
-            cell.className = 'sp-calendar-day';
-            cell.textContent = String(day);
-            if (iso === toISO(today)) cell.classList.add('is-today');
-            if (isMonday) {
-                cell.type = 'button';
-                cell.setAttribute('aria-label', 'Senin, ' + formatLong.format(date));
-                cell.setAttribute('aria-pressed', String(iso === input.value));
-                if (iso === input.value) cell.classList.add('is-selected');
-                cell.addEventListener('click', () => {
-                    input.value = iso;
-                    showPeriod();
-                    openPopup(false);
-                    trigger.focus();
-                });
-            } else {
-                cell.setAttribute('aria-disabled', 'true');
-            }
-            days.appendChild(cell);
+        if (mulai.getDay() !== 0) {
+            input.setCustomValidity('Tanggal mulai planning harus hari Minggu.');
+            info.textContent = 'Tanggal mulai harus hari Minggu. Silakan pilih ulang.';
+            return;
         }
+
+        input.setCustomValidity('');
+        const selesai = new Date(mulai);
+        selesai.setDate(selesai.getDate() + 6);
+        info.textContent = `Periode planning: ${formatTanggal(mulai)} – ${formatTanggal(selesai)}`;
     }
 
-    trigger.addEventListener('click', () => openPopup(popup.hidden));
-    prev.addEventListener('click', () => {
-        const date = new Date(viewYear, viewMonth - 1, 1);
-        viewYear = date.getFullYear();
-        viewMonth = date.getMonth();
-        render();
-    });
-    next.addEventListener('click', () => {
-        const date = new Date(viewYear, viewMonth + 1, 1);
-        viewYear = date.getFullYear();
-        viewMonth = date.getMonth();
-        render();
-    });
-    document.addEventListener('pointerdown', event => {
-        if (!popup.hidden && !picker.contains(event.target)) openPopup(false);
-    });
-    document.addEventListener('keydown', event => {
-        if (event.key === 'Escape' && !popup.hidden) {
-            openPopup(false);
-            trigger.focus();
-        }
-    });
-    input.closest('form')?.addEventListener('submit', event => {
-        const start = parseDate(input.value);
-        if (!start || start.getDay() !== 1) {
-            event.preventDefault();
-            openPopup(true);
-            trigger.focus();
-        }
-    });
-    showPeriod();
+    input.addEventListener('input', perbaruiPeriode);
+    input.addEventListener('change', perbaruiPeriode);
+    perbaruiPeriode();
 });
 
-
-// Fungsi planning mingguan (pemilihan menu dan autosave) tetap dipertahankan.
 // Isi otomatis: hari ke-n memakai menu peringkat ke-n dari 7 menu teratas
 // (berputar lagi dari peringkat 1 bila kandidat kurang dari 7). Menu yang sudah
 // dipakai di hari yang sama atau sehari sebelumnya dilewati supaya menunya bervariasi;
@@ -177,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const toast = document.getElementById('planningToast');
     let timerToast;
     let pesanSelesai = '';
+    let pesanErrorTerakhir = '';
 
     function tampilkanPesan(teks, lama = 3500) {
         if (!toast) return;
@@ -271,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             idPlan = Number(result.id_plan || idPlan);
             gagal.delete(radio.name);
+            if (gagal.size === 0) pesanErrorTerakhir = '';
 
             if (status) {
                 status.textContent = '✓ Tersimpan otomatis';
@@ -278,6 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             gagal.add(radio.name);
+            pesanErrorTerakhir = error.message || 'Tidak diketahui';
 
             if (
                 radio.checked &&
@@ -289,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
             perbaruiTampilan();
 
             if (status) {
-                status.textContent = 'Gagal menyimpan otomatis';
+                status.textContent = 'Gagal menyimpan: ' + pesanErrorTerakhir;
             }
 
             console.error(error);
@@ -595,13 +519,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (pending === 0 && gagal.size > 0 && status) {
                         status.textContent =
-                            'Ada pilihan gagal disimpan. Silakan pilih ulang.';
+                            'Gagal menyimpan: ' + pesanErrorTerakhir;
                     }
 
                     if (pending === 0) {
                         tampilkanPesan(
                             gagal.size > 0
-                                ? 'Ada pilihan gagal disimpan. Silakan pilih ulang.'
+                                ? 'Gagal menyimpan: ' + pesanErrorTerakhir
                                 : (pesanSelesai || '✓ Pilihan tersimpan'),
                             pesanSelesai ? 6000 : 2500
                         );

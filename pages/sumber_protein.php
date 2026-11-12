@@ -34,15 +34,15 @@ $anak = mysqli_fetch_assoc(
 
 /*
 |--------------------------------------------------------------------------
-| TANGGAL SENIN BERIKUTNYA
+| TANGGAL MINGGU BERIKUTNYA
 |--------------------------------------------------------------------------
 */
-function spTanggalSeninDepan(): string
+function spTanggalMingguDepan(): string
 {
     $tanggal = new DateTime();
 
-    if ((int) $tanggal->format('N') !== 1) {
-        $tanggal->modify('next monday');
+    if ((int) $tanggal->format('N') !== 7) {
+        $tanggal->modify('next sunday');
     }
 
     return $tanggal->format('Y-m-d');
@@ -107,7 +107,7 @@ $tanggalMulai = (string) (
     $_POST['tanggal_mulai']
     ?? $_SESSION['tanggal_mulai_planning']
     ?? $planTerakhir['tanggal_mulai']
-    ?? spTanggalSeninDepan()
+    ?? spTanggalMingguDepan()
 );
 
 /*
@@ -141,9 +141,9 @@ if (
                 throw new Exception('Format tanggal planning tidak valid.');
             }
 
-            if ((int) $tanggalObjek->format('N') !== 1) {
+            if ((int) $tanggalObjek->format('N') !== 7) {
                 throw new Exception(
-                    'Tanggal mulai planning harus hari Senin.'
+                    'Tanggal mulai planning harus hari Minggu.'
                 );
             }
 
@@ -415,7 +415,7 @@ if (
                         >
 
                         <div class="sp-help" id="periodePlanning" aria-live="polite">
-                            Pilih hari Senin. Planning berlangsung 7 hari sampai Minggu.
+                            Pilih hari Minggu. Planning berlangsung 7 hari sampai Sabtu.
                         </div>
                     </div>
 
@@ -435,6 +435,43 @@ if (
     </main>
 
 </div>
+
+<script>
+    // Validasi langsung saat tanggal dipilih, tanpa menunggu tombol Lanjut.
+    document.addEventListener('DOMContentLoaded', function () {
+        const inputTanggal = document.getElementById('tanggal_mulai');
+        const infoPeriode = document.getElementById('periodePlanning');
+
+        if (!inputTanggal || !infoPeriode) return;
+
+        function validasiHariMinggu(tampilkanNotifikasi = false) {
+            const nilai = inputTanggal.value;
+            const bagian = nilai.split('-').map(Number);
+            const hari = nilai && bagian.length === 3
+                ? new Date(Date.UTC(bagian[0], bagian[1] - 1, bagian[2])).getUTCDay()
+                : null;
+
+            if (nilai && hari !== 0) {
+                inputTanggal.setCustomValidity('Tanggal mulai planning harus hari Minggu.');
+                infoPeriode.textContent = 'Tanggal yang dipilih bukan hari Minggu. Silakan pilih hari Minggu.';
+                infoPeriode.style.color = '#c62828';
+                if (tampilkanNotifikasi) inputTanggal.reportValidity();
+                return false;
+            }
+
+            inputTanggal.setCustomValidity('');
+            infoPeriode.textContent = 'Pilih hari Minggu. Planning berlangsung 7 hari sampai Sabtu.';
+            infoPeriode.style.color = '';
+            return true;
+        }
+
+        // Tetap memeriksa tanggal lama yang mungkin tersimpan saat aturan masih Senin.
+        validasiHariMinggu();
+        inputTanggal.addEventListener('change', function () {
+            validasiHariMinggu(true);
+        });
+    });
+</script>
 
 <script src="/assets/js/script.js"></script>
 <script src="/assets/js/planning_mingguan.js?v=20261109-date-native" defer></script>

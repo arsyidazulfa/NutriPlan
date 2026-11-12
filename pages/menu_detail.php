@@ -348,20 +348,32 @@ if ($caraMasak !== '') {
                     <div class="menu-detail-steps">
 
                         <h4>
-                            Bahan
+                            Bumbu dan Bahan Resep Asli
                         </h4>
 
-                        <ul class="bahan-resep">
+                        <p class="rincian-gizi-catatan" style="margin:0 0 10px;">
+                            Resep asli untuk sekali masak (beberapa porsi). Bahan 1 porsi anak
+                            ada di tabel Rincian Perhitungan Gizi, nasinya ditakar sesuai
+                            kebutuhan energi anak di halaman Planning dan Cara Mengolah.
+                        </p>
 
-                            <?php foreach ($bahanResep as $item): ?>
+                        <details>
+                            <summary style="cursor:pointer; font-size:14px; font-weight:600;">
+                                Lihat resep asli
+                            </summary>
 
-                                <li>
-                                    <?= htmlspecialchars($item); ?>
-                                </li>
+                            <ul class="bahan-resep" style="margin-top:8px;">
 
-                            <?php endforeach; ?>
+                                <?php foreach ($bahanResep as $item): ?>
 
-                        </ul>
+                                    <li>
+                                        <?= htmlspecialchars($item); ?>
+                                    </li>
+
+                                <?php endforeach; ?>
+
+                            </ul>
+                        </details>
 
                     </div>
 

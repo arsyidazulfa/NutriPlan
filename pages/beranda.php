@@ -326,11 +326,10 @@ $result = mysqli_query(
     "SELECT
         id_edukasi,
         judul,
-        isi,
         gambar
      FROM edukasi
      ORDER BY created_at DESC
-     LIMIT 4"
+     LIMIT 3"
 );
 
 if ($result) {
@@ -360,13 +359,13 @@ if ($result) {
 
     <?php if ($edukasi): ?>
 
-        <div class="news-grid">
+        <div class="menu-grid">
 
             <?php foreach ($edukasi as $item): ?>
 
                 <a
                     href="/index.php?page=edukasi_detail&id=<?= (int) $item['id_edukasi']; ?>"
-                    class="news-card"
+                    class="menu-card"
                     style="text-decoration:none; color:inherit;"
                 >
 
@@ -378,40 +377,21 @@ if ($result) {
                     ): ?>
 
                         <img
-                            class="news-card-img"
                             src="/assets/images/<?= htmlspecialchars($item['gambar']); ?>"
                             alt="<?= htmlspecialchars($item['judul']); ?>"
                         >
 
                     <?php else: ?>
 
-                        <div class="news-card-img-placeholder">
+                        <div class="menu-card-no-img">
                             📰
                         </div>
 
                     <?php endif; ?>
 
 
-                    <div class="news-card-body">
-
-                        <div class="news-card-title">
-                            <?= htmlspecialchars($item['judul']); ?>
-                        </div>
-
-                        <div class="news-card-excerpt">
-
-                            <?= htmlspecialchars(
-                                strip_tags(
-                                    substr(
-                                        $item['isi'],
-                                        0,
-                                        200
-                                    )
-                                )
-                            ); ?>
-
-                        </div>
-
+                    <div class="menu-card-label">
+                        <?= htmlspecialchars($item['judul']); ?>
                     </div>
 
                 </a>

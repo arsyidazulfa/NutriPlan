@@ -1,28 +1,28 @@
 <?php
 
-/**
- * ============================================================
- * HELPER ANTROPOMETRI ANAK
- * ============================================================
- * Digunakan untuk anak usia 6–12 tahun.
- *
- * Referensi:
- * - WHO Growth Reference 2007
- *   - BMI-for-age
- *   - Height-for-age
- * - Permenkes No. 2 Tahun 2020
- *   - Kategori status gizi IMT/U usia 5–18 tahun
- *
- * Standar WHO disimpan pada tabel standar_antropometri
- * berdasarkan jenis kelamin dan umur dalam bulan.
- * ============================================================
+/*
+  HELPER ANTROPOMETRI ANAK
+ 
+  Digunakan untuk anak usia 6–12 tahun.
+ 
+  Referensi:
+  - WHO Growth Reference 2007
+    - BMI-for-age
+    - Height-for-age
+  - Permenkes No. 2 Tahun 2020
+    - Kategori status gizi IMT/U usia 5–18 tahun
+ 
+  Standar WHO disimpan pada tabel standar_antropometri
+  berdasarkan jenis kelamin dan umur dalam bulan.
+  
  */
 
-/**
- * Hitung umur dalam bulan penuh.
- * Contoh: 8 tahun 7 bulan = 103 bulan.
+  /*
+  Hitung umur dalam bulan penuh.
+  Contoh: 8 tahun 7 bulan = 103 bulan.
  */
-function hitungUmurBulan(
+
+function hitungUmurBulan(     /* (hitungUmurBulan) Hitung umur dalam bulan penuh */
     string $tanggalLahir,
     string $tanggalPengukuran
 ): int {
@@ -34,8 +34,8 @@ function hitungUmurBulan(
     }
 
     try {
-        $lahir = new DateTime($tanggalLahir);
-        $pengukuran = new DateTime($tanggalPengukuran);
+        $lahir = new DateTime($tanggalLahir);           /* $lahir: Tanggal lahir anak */
+        $pengukuran = new DateTime($tanggalPengukuran); /* $pengukuran: Tanggal pengukuran */
     } catch (Exception $e) {
         throw new InvalidArgumentException(
             'Format tanggal tidak valid.'
@@ -48,29 +48,30 @@ function hitungUmurBulan(
         );
     }
 
-    $selisih = $lahir->diff($pengukuran);
+    $selisih = $lahir->diff($pengukuran);   /* $selisih: Selisih kedua tanggal */
 
     return ($selisih->y * 12) + $selisih->m;
 }
 
-
-/**
- * Ubah umur bulan menjadi tahun penuh.
- * Digunakan untuk lookup AKG.
+/*
+  Ubah umur bulan menjadi tahun penuh.
+  Digunakan untuk lookup AKG.
  */
-function hitungUmurTahun(int $umurBulan): int
+
+function hitungUmurTahun(int $umurBulan): int  /* (hitungUmurTahun) Mengubah umur bulan menjadi tahun penuh*/
 {
     if ($umurBulan < 0) {
         return 0;
     }
 
-    return intdiv($umurBulan, 12);
+    return intdiv($umurBulan, 12);   /* (intdiv) membagi dua bilangan bulat dan mengambil hasil pembagian bulatnya tanpa angka desimal*/
 }
 
-/**
- * IMT = BB (kg) / TB² (m)
+/*
+  IMT = BB (kg) / TB² (m)
  */
-function hitungIMT(
+
+function hitungIMT(    /* (hitungIMT) Menghitung Indeks Massa Tubuh */
     float $beratBadan,
     float $tinggiBadan
 ): float {
@@ -92,18 +93,18 @@ function hitungIMT(
     return $beratBadan / ($tinggiMeter * $tinggiMeter);
 }
 
-
-/**
- * Ambil standar antropometri WHO berdasarkan:
- * - indikator: imt_u / tb_u
- * - jenis kelamin
- * - umur bulan
+/*
+  Ambil standar antropometri WHO berdasarkan:
+  - indikator: imt_u / tb_u
+  - jenis kelamin
+  - umur bulan
  */
-function ambilStandarAntropometri(
-    mysqli $conn,
-    string $indikator,
-    string $jenisKelamin,
-    int $umurBulan
+
+function ambilStandarAntropometri(  /* (ambilStandarAntropometri) Mengambil standar WHO berdasarkan umur, jenis kelamin, dan indikator */
+    mysqli $conn,          /* koneksi ke database */
+    string $indikator,     /* IMT/U dan TB/U */
+    string $jenisKelamin,  /* Laki atau Perempuan */
+    int $umurBulan         /* Umur anak dalam bulan */
 ): ?array {
 
     if (!in_array($indikator, ['imt_u', 'tb_u'], true)) {
@@ -183,18 +184,18 @@ function ambilStandarAntropometri(
     return $data ?: null;
 }
 
-/**
- * Usia-tinggi (height age): umur pada standar TB/U WHO yang
- * mediannya paling dekat dengan tinggi badan anak.
- *
- * Rekomendasi IDAI 2011, Asuhan Nutrisi Pediatrik, bagian 5.2:
- * "Usia-tinggi ialah usia bila tinggi badan anak tersebut
- * merupakan P50 pada grafik."
- *
- * Pencarian memakai seluruh rentang standar (61–228 bulan),
- * karena usia-tinggi bisa berada di luar umur anak sendiri.
+/*
+  Usia-tinggi (height age): umur pada standar TB/U WHO yang
+  mediannya paling dekat dengan tinggi badan anak.
+  Rekomendasi IDAI 2011, Asuhan Nutrisi Pediatrik
+  "Usia-tinggi ialah usia bila tinggi badan anak tersebut
+  merupakan P50 pada grafik."
+
+  Pencarian memakai seluruh rentang standar (61–228 bulan),
+  karena usia-tinggi bisa berada di luar umur anak sendiri.
  */
-function cariUsiaTinggi(
+
+function cariUsiaTinggi(   /* (cariUsiaTinggi) Mencari usia yang median tingginya paling dekat dengan tinggi anak */
     mysqli $conn,
     string $jenisKelamin,
     float $tinggiBadan
@@ -212,9 +213,12 @@ function cariUsiaTinggi(
          FROM standar_antropometri
          WHERE indikator = 'tb_u'
            AND jenis_kelamin = ?
-         ORDER BY ABS(M - ?) ASC, umur_bulan ASC
+         ORDER BY ABS(M - ?) ASC, umur_bulan ASC  /* Mencari umur pada standar TB/U WHO yang nilai median tingginya paling dekat dengan tinggi badan anak */
          LIMIT 1"
     );
+
+    /* ABS(M - ?) untuk menghitung selisih absolut antara median tinggi WHO dan tinggi badan anak */
+    /* ORDER BY ASC untuk mengurutkan selisih dari yang terkecil, sehingga diperoleh usia dengan median tinggi paling dekat */
 
     if (!$stmt) {
         throw new RuntimeException(
@@ -239,11 +243,11 @@ function cariUsiaTinggi(
     return $data ? (int) $data['umur_bulan'] : null;
 }
 
-
-/**
- * Median IMT/U WHO pada umur tertentu (z-score = 0).
+ /*
+  Median IMT/U WHO pada umur tertentu (z-score = 0).
  */
-function ambilMedianIMTU(
+
+function ambilMedianIMTU(    /* (ambilMedianIMTU) Mengambil median IMT/U dari tabel WHO */
     mysqli $conn,
     string $jenisKelamin,
     int $umurBulan
@@ -282,16 +286,16 @@ function ambilMedianIMTU(
     return $data ? (float) $data['median'] : null;
 }
 
-
-/**
- * Berat badan ideal = median IMT/U pada usia-tinggi × TB² (m).
- *
- * IDAI 2011 mendefinisikan berat badan ideal sebagai berat badan
- * menurut tinggi badan pada P50. WHO Reference 2007 tidak memuat
- * tabel BB/TB untuk usia di atas 5 tahun, sehingga berat pada P50
- * diturunkan dari median IMT pada usia-tinggi anak.
+ /*
+  Berat badan ideal = median IMT/U pada usia-tinggi × TB² (m).
+ 
+  IDAI 2011 mendefinisikan berat badan ideal sebagai berat badan
+  menurut tinggi badan pada P50. WHO Reference 2007 tidak memuat
+  tabel BB/TB untuk usia di atas 5 tahun, sehingga berat pada P50
+  diturunkan dari median IMT pada usia-tinggi anak.
  */
-function hitungBeratBadanIdeal(
+
+function hitungBeratBadanIdeal(   /* (hitungBeratBadanIdeal) Menghitung BBI berdasarkan median IMT dan tinggi anak*/
     float $medianImt,
     float $tinggiBadan
 ): float {
@@ -313,15 +317,15 @@ function hitungBeratBadanIdeal(
     return round($medianImt * $tinggiMeter * $tinggiMeter, 2);
 }
 
-
-/**
- * Hitung z-score IMT/U menggunakan metode LMS WHO.
- *
- * z = ((y/M)^L - 1) / (S × L)
- *
- * Untuk nilai di luar ±3 SD digunakan koreksi WHO.
+ /*
+  Hitung z-score IMT/U menggunakan metode LMS WHO.
+ 
+  z = ((y/M)^L - 1) / (S × L)
+ 
+  Untuk nilai di luar ±3 SD digunakan koreksi WHO.
  */
-function hitungZScoreIMTU(
+
+function hitungZScoreIMTU(  /* (hitungZScoreIMTU) Menghitung z-score IMT/U */
     float $imt,
     array $standar
 ): float {
@@ -343,10 +347,12 @@ function hitungZScoreIMTU(
     }
 
     $z = (pow($imt / $M, $L) - 1) / ($S * $L);
-
+    
+    /* pow() Untuk melakukan operasi perpangkatan dalam rumus LMS */
     /*
-     * Koreksi WHO jika z-score > +3 SD.
-     */
+      Koreksi WHO jika z-score > +3 SD.
+    */
+
     if ($z > 3) {
         $sd3 = (float) ($standar['sd3pos'] ?? 0);
         $sd2 = (float) ($standar['sd2pos'] ?? 0);
@@ -358,7 +364,7 @@ function hitungZScoreIMTU(
     }
 
     /*
-     * Koreksi WHO jika z-score < -3 SD.
+      Koreksi WHO jika z-score < -3 SD.
      */
     if ($z < -3) {
         $sd3 = (float) ($standar['sd3neg'] ?? 0);
@@ -373,13 +379,14 @@ function hitungZScoreIMTU(
     return $z;
 }
 
-/**
- * Hitung z-score TB/U.
- *
- * WHO Height-for-Age menggunakan L = 1:
- * z = (y - M) / (M × S)
+ /*
+  Hitung z-score TB/U.
+ 
+  WHO Height-for-Age menggunakan L = 1:
+  z = (y - M) / (M × S)
  */
-function hitungZScoreTBU(
+
+function hitungZScoreTBU(    /* (hitungZScoreTBU) Menghitung z-score TB/U */
     float $tinggiBadan,
     array $standar
 ): float {
@@ -410,11 +417,12 @@ function hitungZScoreTBU(
 }
 
 
-/**
- * RULE IF–THEN:
- * Menentukan status gizi berdasarkan z-score IMT/U.
+ /*
+  RULE IF–THEN:
+  Menentukan status gizi berdasarkan z-score IMT/U.
  */
-function statusIMTU(float $z): string
+
+function statusIMTU(float $z): string   /* (statusIMTU) Mengklasifikasikan status gizi berdasarkan z-score IMT/U */
 {
     if ($z < -3) {
         return 'Gizi buruk';
@@ -436,11 +444,12 @@ function statusIMTU(float $z): string
 }
 
 
-/**
- * RULE IF–THEN:
- * Menentukan status tinggi badan berdasarkan z-score TB/U.
+/*
+  RULE IF–THEN:
+  Menentukan status tinggi badan berdasarkan z-score TB/U.
  */
-function statusTBU(float $z): string
+
+function statusTBU(float $z): string   /* (statusTBU) Mengklasifikasikan status tinggi badan berdasarkan z-score TB/U */
 {
     if ($z < -3) {
         return 'Sangat pendek';
@@ -458,17 +467,18 @@ function statusTBU(float $z): string
 }
 
 
-/**
- * Menghitung seluruh hasil antropometri anak.
- *
- * Alur:
- * umur bulan
- * → IMT
- * → standar WHO
- * → z-score IMT/U dan TB/U
- * → klasifikasi status
+/*
+  Menghitung seluruh hasil antropometri anak.
+ 
+  Alur:
+  umur bulan
+  → IMT
+  → standar WHO
+  → z-score IMT/U dan TB/U
+  → klasifikasi status
  */
-function hitungAntropometriAnak(
+
+function hitungAntropometriAnak(    /* (hitungAntropometriAnak) Menggabungkan seluruh proses antropometri */
     mysqli $conn,
     string $tanggalLahir,
     string $tanggalPengukuran,
@@ -500,6 +510,7 @@ function hitungAntropometriAnak(
     /*
      * Ambil standar WHO sesuai umur dan jenis kelamin.
      */
+
     $standarIMTU = ambilStandarAntropometri(
         $conn,
         'imt_u',
@@ -531,8 +542,9 @@ function hitungAntropometriAnak(
     }
 
     /*
-     * Hitung z-score.
+      Hitung z-score.
      */
+
     $zIMTU = hitungZScoreIMTU(
         $imt,
         $standarIMTU
@@ -544,8 +556,9 @@ function hitungAntropometriAnak(
     );
 
     /*
-     * RULE IF–THEN untuk klasifikasi hasil.
+      RULE IF–THEN untuk klasifikasi hasil.
      */
+
     $statusIMTU = statusIMTU($zIMTU);
     $statusTBU = statusTBU($zTBU);
 

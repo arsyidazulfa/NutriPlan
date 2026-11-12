@@ -4,9 +4,10 @@ class RencanaMingguanRepository
 {
     private mysqli $conn;
 
+    // Hari ke-1 dimulai Minggu dan hari ke-7 berakhir Sabtu.
     private array $hariList = [
-        'Senin', 'Selasa', 'Rabu', 'Kamis',
-        'Jumat', 'Sabtu', 'Minggu'
+        'Minggu', 'Senin', 'Selasa', 'Rabu',
+        'Kamis', 'Jumat', 'Sabtu'
     ];
 
     private array $slotList = ['pagi', 'siang', 'malam'];
@@ -20,13 +21,14 @@ class RencanaMingguanRepository
     {
         $date = DateTime::createFromFormat('!Y-m-d', $tanggal);
 
+        // Format 'w': Minggu = 0, Senin = 1, ..., Sabtu = 6.
         if (
             !$date ||
             $date->format('Y-m-d') !== $tanggal ||
-            $date->format('N') !== '1'
+            $date->format('w') !== '0'
         ) {
             throw new InvalidArgumentException(
-                'Tanggal mulai planning harus tanggal valid pada hari Senin.'
+                'Tanggal mulai planning harus tanggal valid pada hari Minggu.'
             );
         }
 

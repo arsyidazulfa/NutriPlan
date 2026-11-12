@@ -333,14 +333,25 @@ function caraPorsiMenu(
     }
 
     try {
-        return susunPorsiMenu(
-            $menu,
-            targetMenuPlanning($anak, $slot),
-            $nasi
-        );
+        $target = targetMenuPlanning($anak, $slot);
+
+        return susunPorsiMenu($menu, $target, $nasi)
+            + ['target_energi' => $target['target_energi']];
     } catch (InvalidArgumentException $e) {
         return null;
     }
+}
+
+/*
+ * Bahan 1 porsi lauk dari kolom takaran_porsi, contoh:
+ * "Daging ayam 1 potong sedang (40 g); Minyak 1 sendok teh (5 g)".
+ */
+function caraBahanPorsi(array $menu): array
+{
+    return array_values(array_filter(array_map(
+        'trim',
+        explode(';', (string) ($menu['takaran_porsi'] ?? ''))
+    )));
 }
 
 /* =========================================================
@@ -628,11 +639,7 @@ $dataAnak = $plan ? [
                                         }
                                     }
 
-                                    $takaranLauk = caraAmbilTeks(
-                                        $menu,
-                                        ['takaran_porsi'],
-                                        ''
-                                    );
+                                    $bahanPorsi = caraBahanPorsi($menu);
 
                                     ?>
 
@@ -782,45 +789,58 @@ $dataAnak = $plan ? [
 
                                                     </section>
 
-                                                    <!-- TAKARAN SAJI -->
-                                                    <?php if ($porsi || $takaranLauk !== ''): ?>
-                                                        <section class="cara-detail-section">
+                                                    <!-- BAHAN 1 PORSI ANAK -->
+                                                    <section class="cara-detail-section">
+
+                                                        <?php if ($bahanPorsi || $porsi): ?>
 
                                                             <h4>
-                                                                Takaran Saji untuk Anak
+                                                                Bahan untuk 1 Porsi
+                                                                <?= e($plan['nama_anak'] ?? 'Anak'); ?>
                                                             </h4>
 
                                                             <div class="cara-text-block">
-                                                                <?php if ($takaranLauk !== ''): ?>
-                                                                    <div>
-                                                                        <strong>Lauk:</strong>
-                                                                        <?= e($takaranLauk); ?>
-                                                                    </div>
-                                                                <?php endif; ?>
+                                                                <?php foreach ($bahanPorsi as $item): ?>
+                                                                    <div>• <?= e($item); ?></div>
+                                                                <?php endforeach; ?>
 
                                                                 <?php if ($porsi): ?>
-                                                                    <div>
-                                                                        <strong>Nasi:</strong>
-                                                                        <?= (int) $porsi['nasi_gram']; ?> g
-                                                                    </div>
+                                                                    <div>• Nasi putih <?= (int) $porsi['nasi_gram']; ?> g</div>
                                                                 <?php endif; ?>
+
+                                                                <div>• Bumbu secukupnya</div>
                                                             </div>
 
-                                                        </section>
-                                                    <?php endif; ?>
+                                                            <?php if ($porsi): ?>
+                                                                <p class="rincian-gizi-catatan">
+                                                                    Takaran nasi disesuaikan dengan kebutuhan energi anak
+                                                                    untuk <?= e(strtolower($meta['label'])); ?>
+                                                                    (target <?= e(caraNilaiMenu($porsi, 'target_energi', 'kkal')); ?>,
+                                                                    1 porsi ini <?= e(caraNilaiMenu($porsi, 'total_energi', 'kkal')); ?>).
+                                                                </p>
+                                                            <?php endif; ?>
 
-                                                    <!-- BAHAN -->
-                                                    <section class="cara-detail-section">
+                                                            <details style="margin-top:10px;">
+                                                                <summary style="cursor:pointer; color:#475569; font-size:11px; font-weight:700;">
+                                                                    Lihat bumbu dan bahan resep asli (sekali masak, untuk beberapa porsi)
+                                                                </summary>
 
-                                                        <h4>
-                                                            Bahan
-                                                        </h4>
+                                                                <div class="cara-text-block" style="margin-top:8px;">
+                                                                    <?= nl2br(e($bahan)); ?>
+                                                                </div>
+                                                            </details>
 
-                                                        <div class="cara-text-block">
-                                                            <?= nl2br(
-                                                                e($bahan)
-                                                            ); ?>
-                                                        </div>
+                                                        <?php else: ?>
+
+                                                            <h4>
+                                                                Bahan Resep (untuk Sekali Masak)
+                                                            </h4>
+
+                                                            <div class="cara-text-block">
+                                                                <?= nl2br(e($bahan)); ?>
+                                                            </div>
+
+                                                        <?php endif; ?>
 
                                                     </section>
 

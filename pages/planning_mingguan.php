@@ -28,7 +28,8 @@
             $anak = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtA));
             mysqli_stmt_close($stmtA);
 
-            $hari_list = $repository->getHariList();
+            // Urutan tampilan mengikuti periode perencanaan Minggu–Sabtu.
+            $hari_list = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
             $slotMeta = [
                 'pagi' => [
@@ -55,12 +56,12 @@
 
             $error = '';
 
-            function tanggalSeninDepan(): string
+            function tanggalMingguTerdekat(): string
             {
                 $tanggal = new DateTime();
 
-                if ((int) $tanggal->format('N') !== 1) {
-                    $tanggal->modify('next monday');
+                if ((int) $tanggal->format('w') !== 0) {
+                    $tanggal->modify('next sunday');
                 }
 
                 return $tanggal->format('Y-m-d');
@@ -138,7 +139,7 @@
             $tanggal_mulai = $_POST['tanggal_mulai']
                 ?? $_SESSION['tanggal_mulai_planning']
                 ?? $plan_terakhir['tanggal_mulai']
-                ?? tanggalSeninDepan();
+                ?? tanggalMingguTerdekat();
 
             if (!in_array($kategori_protein, ['nabati', 'hewani'], true)) {
                 $kategori_protein = '';
@@ -407,7 +408,7 @@
                     <div class="planning-settings">
                         <div class="planning-settings-text">
                             <strong>Cara memilih:</strong>
-                            buka tiap hari dari Senin sampai Minggu, lalu pilih 1 menu
+                            buka tiap hari dari Minggu sampai Sabtu, lalu pilih 1 menu
                             untuk sarapan, makan siang, dan makan malam.
                             Menu paling atas adalah yang paling mendekati kebutuhan anak.
                             Hari yang sudah lengkap diberi tanda ✓.
@@ -585,7 +586,7 @@
                         <div class="planning-form-footer-text">
                             Setiap menu yang dipilih akan langsung tersimpan otomatis.
                             Pilihan tetap tersimpan meskipun halaman ditutup atau dibuka kembali.
-                            Setelah semua menu Senin sampai Minggu dipilih, lanjutkan ke halaman Cara Mengolah.
+                            Setelah semua menu Minggu sampai Sabtu dipilih, lanjutkan ke halaman Cara Mengolah.
                         </div>
 
                         <span
